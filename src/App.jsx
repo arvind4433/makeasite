@@ -1,0 +1,175 @@
+import { BrowserRouter as Router, Routes, Route, useLocation, useSearchParams } from 'react-router-dom';
+import { Toaster } from 'sonner';
+import Navbar from './components/Navbar';
+import Footer from './components/Footer';
+import Home from './pages/Home';
+import ServicesPage from './pages/ServicesPage';
+import PortfolioPage from './pages/PortfolioPage';
+import ContactPage from './pages/ContactPage';
+import Login from './pages/Login';
+import Register from './pages/Register';
+import ForgotPassword from './pages/ForgotPassword';
+import ResetPassword from './pages/ResetPassword';
+import AuthCallback from './pages/AuthCallback';
+import AboutPage from './pages/AboutPage';
+import PrivacyPolicy from './pages/PrivacyPolicy';
+import TermsPage from './pages/TermsPage';
+import RefundPolicy from './pages/RefundPolicy';
+import Dashboard from './pages/Dashboard';
+import PricingPage from './pages/PricingPage';
+import AdminDashboard from './pages/AdminDashboard';
+import { AuthProvider } from './context/AuthContext';
+import { ThemeProvider } from './context/ThemeContext';
+import { LoadingProvider, useLoading } from './context/LoadingContext';
+import { OrderProvider, useOrder } from './context/OrderContext';
+import PageLoader from './components/PageLoader';
+import CookieConsent from './components/CookieConsent';
+import OrderModal from './components/OrderModal';
+import CartDrawer from './components/CartDrawer';
+import LoginModal from './components/LoginModal';
+import { useEffect, useState, useContext } from 'react';
+import { AuthContext } from './context/AuthContext';
+
+/* ── Scroll to top on every route change ─────────────── */
+const ScrollToTop = () => {
+  const { pathname, hash } = useLocation();
+  useEffect(() => {
+    if (hash) {
+      const el = document.getElementById(hash.replace('#', ''));
+      if (el) el.scrollIntoView({ behavior: 'smooth' });
+    } else {
+      window.scrollTo(0, 0);
+    }
+  }, [pathname, hash]);
+  return null;
+};
+
+/* ── Auth pages hide the global Footer ── */
+const AUTH_PATHS = ['/login', '/register', '/forgot-password', '/auth/callback'];
+const isAuthPath = (path) =>
+  AUTH_PATHS.includes(path) || path.startsWith('/reset-password');
+
+/* ── Main app shell ──────────────────────────────────── */
+const AppInner = () => {
+  const { isLoading } = useLoading();
+  const { user } = useContext(AuthContext);
+  const location = useLocation();
+  const hideFooter = isAuthPath(location.pathname);
+  const { openOrderModal, setPendingPlan } = useOrder();
+
+  // Login modal state
+  const [loginModalOpen, setLoginModalOpen] = useState(false);
+  const [loginContext, setLoginContext] = useState('general');
+
+  // Handle plan-select → login → order flow from OAuth callback query param
+  const [searchParams, setSearchParams] = useSearchParams();
+  useEffect(() => {
+    const openOrder = searchParams.get('openOrder');
+    if (openOrder && user) {
+      // Clear param
+      setSearchParams(prev => { const n = new URLSearchParams(prev); n.delete('openOrder'); return n; }, { replace: true });
+      setTimeout(() => openOrderModal(openOrder), 400);
+    }
+  }, [searchParams, user, openOrderModal, setSearchParams]);
+
+  // Listen for custom event from PricingSection / CostCalculator
+  useEffect(() => {
+    const handler = (e) => {
+      const ctx = e.detail?.context || 'general';
+      if (user) {
+        // User is already logged in — open order modal directly
+        if (ctx === 'plan') openOrderModal(null); // plan already set via setPendingPlan
+      } else {
+        setLoginContext(ctx);
+        setLoginModalOpen(true);
+      }
+    };
+    window.addEventListener('open-login-modal', handler);
+    return () => window.removeEventListener('open-login-modal', handler);
+  }, [user, openOrderModal]);
+
+  const handleOpenLogin = () => {
+    setLoginContext('general');
+    setLoginModalOpen(true);
+  };
+
+  return (
+    <>
+      <PageLoader visible={isLoading} />
+      <ScrollToTop />
+
+      {/* Global Overlays */}
+      <LoginModal
+        isOpen={loginModalOpen}
+        onClose={() => setLoginModalOpen(false)}
+        loginContext={loginContext}
+      />
+      <OrderModal />
+      <CartDrawer />
+
+      <div className="flex flex-col min-h-screen transition-colors duration-300"
+        style={{ backgroundColor: 'var(--bg-base)', color: 'var(--text-primary)' }}>
+        <Navbar onOpenLogin={handleOpenLogin} />
+        <main className="flex-grow">
+          <Routes>
+            {/* Main pages */}
+            <Route path="/" element={<Home />} />
+            <Route path="/services" element={<ServicesPage />} />
+            <Route path="/pricing" element={<PricingPage />} />
+            <Route path="/portfolio" element={<PortfolioPage />} />
+            <Route path="/contact" element={<ContactPage />} />
+
+            {/* Auth pages */}
+            <Route path="/login" element={<Login />} />
+            <Route path="/register" element={<Register />} />
+            <Route path="/forgot-password" element={<ForgotPassword />} />
+            <Route path="/reset-password/:token" element={<ResetPassword />} />
+            <Route path="/auth/callback" element={<AuthCallback />} />
+
+            {/* Footer / legal pages */}
+            <Route path="/about" element={<AboutPage />} />
+            <Route path="/privacy" element={<PrivacyPolicy />} />
+            <Route path="/terms" element={<TermsPage />} />
+            <Route path="/refund" element={<RefundPolicy />} />
+
+            {/* Protected app pages */}
+            <Route path="/dashboard" element={<Dashboard />} />
+            <Route path="/admin-dashboard" element={<AdminDashboard />} />
+          </Routes>
+        </main>
+        {!hideFooter && <Footer />}
+        <CookieConsent />
+        <Toaster position="top-center" richColors closeButton />
+      </div>
+    </>
+  );
+};
+
+/* ── Root component ──────────────────────────────────── */
+function App() {
+  const [initialLoading, setInitialLoading] = useState(true);
+
+  useEffect(() => {
+    const timer = setTimeout(() => setInitialLoading(false), 1200);
+    return () => clearTimeout(timer);
+  }, []);
+
+  return (
+    <Router>
+      <ThemeProvider>
+        <LoadingProvider>
+          <AuthProvider>
+            <OrderProvider>
+              {initialLoading
+                ? <PageLoader visible={true} />
+                : <AppInner />
+              }
+            </OrderProvider>
+          </AuthProvider>
+        </LoadingProvider>
+      </ThemeProvider>
+    </Router>
+  );
+}
+
+export default App;

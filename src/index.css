@@ -1,0 +1,318 @@
+/* =====================================================
+   WebDevPro — Global Design System
+   Dual Theme: Light (default) + Dark mode
+   Color Accent: Red (#dc2626)
+   ===================================================== */
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Poppins:wght@400;500;600;700;800;900&display=swap');
+@import "tailwindcss";
+
+/* ── CSS Custom Properties ─────────────────────────── */
+:root {
+  /* ── LIGHT: layered surfaces (each slightly different) */
+  --bg-base: #f1f5f9;
+  /* page bg — slight gray */
+  --bg-surface: #ffffff;
+  /* white sections */
+  --bg-elevated: #f8fafc;
+  /* alt sections — lighter than base */
+  --bg-card: #ffffff;
+  /* card fill */
+  --bg-card-inner: #f8fafc;
+  /* nested inner card */
+  --bg-muted: #e2e8f0;
+
+  /* Text */
+  --text-primary: #0f172a;
+  --text-secondary: #475569;
+  --text-muted: #94a3b8;
+
+  /* Border */
+  --border: rgba(0, 0, 0, 0.07);
+  --border-strong: rgba(0, 0, 0, 0.12);
+
+  /* Shadow */
+  --shadow-card: 0 1px 3px rgba(0, 0, 0, 0.06), 0 4px 12px rgba(0, 0, 0, 0.05);
+  --shadow-raised: 0 4px 20px rgba(0, 0, 0, 0.08), 0 1px 4px rgba(0, 0, 0, 0.05);
+
+  /* Red Accent */
+  --accent: #dc2626;
+  --accent-light: rgba(220, 38, 38, 0.08);
+  --accent-border: rgba(220, 38, 38, 0.2);
+}
+
+.dark {
+  /* ── DARK: layered surfaces with real depth differentiation */
+  --bg-base: #050914;
+  /* deepest — body/page bg */
+  --bg-surface: #0b1120;
+  /* slightly lighter sections */
+  --bg-elevated: #111827;
+  /* elevated sections */
+  --bg-card: #141d2e;
+  /* cards — noticeably lighter than base */
+  --bg-card-inner: #1a2540;
+  /* inner/nested card */
+  --bg-muted: rgba(255, 255, 255, 0.04);
+
+  /* Text */
+  --text-primary: #f1f5f9;
+  --text-secondary: #94a3b8;
+  --text-muted: #4b5563;
+
+  /* Border */
+  --border: rgba(255, 255, 255, 0.07);
+  --border-strong: rgba(255, 255, 255, 0.11);
+
+  /* Shadow — in dark we use colored glows */
+  --shadow-card: 0 2px 8px rgba(0, 0, 0, 0.4), 0 1px 2px rgba(0, 0, 0, 0.3);
+  --shadow-raised: 0 8px 32px rgba(0, 0, 0, 0.5), 0 2px 8px rgba(0, 0, 0, 0.3);
+
+  /* Red Accent */
+  --accent: #dc2626;
+  --accent-light: rgba(220, 38, 38, 0.1);
+  --accent-border: rgba(220, 38, 38, 0.22);
+}
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* ── Base ────────────────────────────────────────────── */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+  -webkit-tap-highlight-color: transparent;
+}
+
+body {
+  background-color: var(--bg-base);
+  color: var(--text-primary);
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  line-height: 1.6;
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  font-family: 'Poppins', sans-serif;
+  letter-spacing: -0.02em;
+  line-height: 1.15;
+}
+
+/* Global smooth theme switch — only bg/border/color, not transform/opacity */
+*,
+*::before,
+*::after {
+  transition-property: background-color, border-color, color, box-shadow;
+  transition-duration: 0.2s;
+  transition-timing-function: ease;
+}
+
+/* ── Scrollbar ────────────────────────────────────────── */
+::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(220, 38, 38, 0.3);
+  border-radius: 999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(220, 38, 38, 0.55);
+}
+
+/* ── Selection ────────────────────────────────────────── */
+::selection {
+  background: rgba(220, 38, 38, 0.15);
+  color: #be123c;
+}
+
+.dark ::selection {
+  background: rgba(220, 38, 38, 0.25);
+  color: #fca5a5;
+}
+
+/* ── Focus Ring ──────────────────────────────────────── */
+*:focus-visible {
+  outline: 2px solid #dc2626;
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* ═══════════════════════════════════════════════════════
+   UTILITY CLASSES
+   ═══════════════════════════════════════════════════════ */
+
+/* ── Section Variants ───────────────────────────────── */
+.section-light {
+  background-color: var(--bg-base);
+}
+
+.section-surface {
+  background-color: var(--bg-surface);
+}
+
+.section-elevated {
+  background-color: var(--bg-elevated);
+}
+
+.section-sep {
+  border-top: 1px solid var(--border);
+}
+
+/* ── Cards ───────────────────────────────────────────── */
+.card {
+  background-color: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 1rem;
+  /* 16px */
+  box-shadow: var(--shadow-card);
+  transition: box-shadow 0.25s ease, transform 0.25s ease, border-color 0.2s ease !important;
+}
+
+.card:hover {
+  transform: translateY(-3px);
+  box-shadow: var(--shadow-raised);
+}
+
+.dark .card {
+  border-color: rgba(255, 255, 255, 0.08);
+}
+
+.dark .card:hover {
+  border-color: rgba(220, 38, 38, 0.18);
+}
+
+/* Inner / nested card */
+.card-inner {
+  background-color: var(--bg-card-inner);
+  border: 1px solid var(--border);
+  border-radius: 0.75rem;
+  /* 12px */
+}
+
+.dark .card-inner {
+  border-color: rgba(255, 255, 255, 0.06);
+}
+
+/* ── Buttons ─────────────────────────────────────────── */
+.primary-btn {
+  background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
+  color: #ffffff !important;
+  font-weight: 600;
+  box-shadow: 0 4px 14px -2px rgba(220, 38, 38, 0.4);
+  position: relative;
+  overflow: hidden;
+  transition: box-shadow 0.25s ease, transform 0.2s ease !important;
+}
+
+.primary-btn:hover {
+  box-shadow: 0 8px 24px -4px rgba(220, 38, 38, 0.5);
+  transform: translateY(-1px);
+}
+
+.primary-btn:active {
+  transform: translateY(0);
+}
+
+.secondary-btn {
+  background: var(--bg-card);
+  border: 1px solid var(--border-strong);
+  color: var(--text-primary);
+  font-weight: 500;
+  transition: all 0.22s ease !important;
+}
+
+.secondary-btn:hover {
+  border-color: rgba(220, 38, 38, 0.4);
+  color: #dc2626;
+}
+
+/* ── Typography ─────────────────────────────────────── */
+.gradient-text {
+  background: linear-gradient(135deg, #dc2626 0%, #f97316 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* ── Badge ───────────────────────────────────────────── */
+.badge-red {
+  background: rgba(220, 38, 38, 0.08);
+  color: #dc2626;
+  border: 1px solid rgba(220, 38, 38, 0.2);
+  border-radius: 999px;
+  padding: 0.25rem 0.9rem;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  display: inline-block;
+}
+
+.dark .badge-red {
+  background: rgba(220, 38, 38, 0.12);
+  color: #fca5a5;
+  border-color: rgba(220, 38, 38, 0.25);
+}
+
+/* ── Inputs ──────────────────────────────────────────── */
+.input-base {
+  background-color: var(--bg-card-inner);
+  border: 1px solid var(--border-strong);
+  color: var(--text-primary);
+  border-radius: 0.75rem;
+  padding: 0.65rem 1rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  width: 100%;
+  transition: border-color 0.2s, box-shadow 0.2s !important;
+}
+
+.input-base::placeholder {
+  color: var(--text-muted);
+}
+
+.input-base:focus {
+  outline: none;
+  border-color: #dc2626;
+  box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.12);
+}
+
+/* ── Dividers ────────────────────────────────────────── */
+.divider-gradient {
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(220, 38, 38, 0.35), transparent);
+}
+
+/* ── Hover lift ──────────────────────────────────────── */
+.card-hover {
+  transition: transform 0.25s ease, box-shadow 0.25s ease !important;
+}
+
+.card-hover:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-raised);
+}
+
+/* ── Red Glow ─────────────────────────────────────────── */
+.red-glow {
+  box-shadow: 0 0 40px rgba(220, 38, 38, 0.22);
+}
