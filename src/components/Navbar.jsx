@@ -1,6 +1,6 @@
 import { useState, useContext, useEffect, useRef } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Menu, X, Sun, Moon, ChevronRight, ArrowRight, ChevronDown, LayoutDashboard, Settings, LogOut, ShoppingCart } from 'lucide-react';
+import { Menu, X, Sun, Moon, ChevronRight, ArrowRight, ChevronDown, LayoutDashboard, Settings, LogOut, ShoppingCart, MessageSquare, User } from 'lucide-react';
 import { AuthContext } from '../context/AuthContext';
 import { ThemeContext } from '../context/ThemeContext';
 import { OrderContext } from '../context/OrderContext';
@@ -37,8 +37,9 @@ const Avatar = ({ user, size = 8 }) => {
 const ProfileDropdown = ({ user, logout, onClose }) => {
     const dashPath = user?.role === 'admin' ? '/admin-dashboard' : '/dashboard';
     const menuItems = [
-        { icon: LayoutDashboard, label: user?.role === 'admin' ? 'Admin Panel' : 'My Orders', to: dashPath },
-        { icon: Settings, label: 'Profile Settings', to: '/dashboard?tab=settings' },
+        { icon: User, label: 'Profile', to: '/dashboard?tab=settings' },
+        { icon: LayoutDashboard, label: 'My Orders', to: dashPath },
+        { icon: MessageSquare, label: 'Messages', to: '/dashboard?tab=chat' },
     ];
 
     return (
@@ -281,7 +282,11 @@ const Navbar = ({ onOpenLogin }) => {
                                     </button>
                                     <Link to={user.role === 'admin' ? '/admin-dashboard' : '/dashboard'}
                                         className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-slate-700 dark:text-slate-300 hover:bg-gray-50 dark:hover:bg-white/5">
-                                        <LayoutDashboard className="w-4 h-4" /> {user.role === 'admin' ? 'Admin Panel' : 'Dashboard'}
+                                        <LayoutDashboard className="w-4 h-4" /> My Orders
+                                    </Link>
+                                    <Link to="/dashboard?tab=chat"
+                                        className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-slate-700 dark:text-slate-300 hover:bg-gray-50 dark:hover:bg-white/5">
+                                        <MessageSquare className="w-4 h-4" /> Messages
                                     </Link>
                                     <button onClick={logout}
                                         className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10">

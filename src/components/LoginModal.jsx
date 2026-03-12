@@ -67,6 +67,11 @@ const LoginModal = ({ isOpen, onClose, loginContext = 'general' }) => {
         if (loginContext === 'plan' && pendingPlan) {
             sessionStorage.setItem('oauth_post_login', JSON.stringify({ action: 'openOrder', plan: pendingPlan }));
         }
+        // Return user to the exact page where login was triggered
+        sessionStorage.setItem(
+            'auth_return_to',
+            window.location.pathname + window.location.search + window.location.hash
+        );
         window.location.href = `${API_BASE_URL}/api/auth/google`;
     };
 

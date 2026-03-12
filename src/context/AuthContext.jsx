@@ -3,6 +3,7 @@ import { toast } from 'sonner';
 import { LoadingContext } from './LoadingContext';
 import { useDispatch } from 'react-redux';
 import { setCredentials, clearCredentials } from '../features/auth/authSlice.js';
+import { apiClient } from '../config/api.js';
 import {
     useLoginMutation,
     useVerifyOtpMutation,
@@ -33,10 +34,23 @@ export const AuthProvider = ({ children }) => {
     useEffect(() => {
         const stored = localStorage.getItem('userInfo');
         if (stored) {
-            try { setUser(JSON.parse(stored)); } catch (_) { }
+            try {
+                setUser(JSON.parse(stored));
+            } catch {
+                localStorage.removeItem('userInfo');
+                setUser(null);
+            }
         }
         setLoading(false);
     }, []);
+
+    /* ── Hydrate user session (used by OAuth callback) ── */
+    const hydrateUser = (data) => {
+        if (!data?.token) return;
+        setUser(data);
+        persist(data);
+        dispatch(setCredentials(data));
+    };
 
     /* ── Step 1: Email/password → sends OTP, returns { message, email } ── */
     const login = async (email, password) => {
@@ -55,9 +69,7 @@ export const AuthProvider = ({ children }) => {
         startLoading();
         try {
             const data = await verifyOtpMutation({ email, otp }).unwrap();
-            setUser(data);
-            persist(data);
-            dispatch(setCredentials(data));
+            hydrateUser(data);
             toast.success(`Welcome${data.name ? ', ' + data.name.split(' ')[0] : ''}! You are now signed in.`);
             return data;
         } catch (err) {
@@ -109,9 +121,7 @@ export const AuthProvider = ({ children }) => {
         startLoading();
         try {
             const { data } = await apiClient.post('/auth/google', { credential });
-            setUser(data);
-            persist(data);
-            dispatch(setCredentials(data));
+            hydrateUser(data);
             toast.success(`Welcome${data.name ? ', ' + data.name.split(' ')[0] : ''}! Signed in with Google.`);
             return data;
         } catch (err) {
@@ -125,9 +135,7 @@ export const AuthProvider = ({ children }) => {
         startLoading();
         try {
             const { data } = await apiClient.post('/auth/facebook', { accessToken, userID });
-            setUser(data);
-            persist(data);
-            dispatch(setCredentials(data));
+            hydrateUser(data);
             toast.success(`Welcome${data.name ? ', ' + data.name.split(' ')[0] : ''}! Signed in with Facebook.`);
             return data;
         } catch (err) {
@@ -149,6 +157,7 @@ export const AuthProvider = ({ children }) => {
         <AuthContext.Provider value={{
             user,
             loading,
+            hydrateUser,
             login,
             register,
             verifyOTP,

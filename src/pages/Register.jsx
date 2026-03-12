@@ -9,7 +9,7 @@ import { API_BASE_URL } from '../config/api.js';
 const FB_ENABLED = !!import.meta.env.VITE_FACEBOOK_APP_ID;
 
 const Register = () => {
-    const { user, register, verifyOTP } = useContext(AuthContext);
+    const { register, verifyOTP } = useContext(AuthContext);
     const navigate = useNavigate();
     const location = useLocation();
     const [form, setForm] = useState({ name: '', email: '', password: '', country: '', phone: '' });
@@ -18,23 +18,20 @@ const Register = () => {
     const [showPw, setShowPw] = useState(false);
     const [error, setError] = useState('');
 
-    const destPath = (role) => {
-        if (role === 'admin') return '/admin-dashboard';
-        const plan = new URLSearchParams(location.search).get('plan');
-        // Return to homepage; if a plan was selected, pass it as query param to open order modal
-        return plan ? `/?openOrder=${plan}` : '/';
-    };
-
     useEffect(() => {
-        if (user) navigate(destPath(user.role), { replace: true });
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [user]);
+        // Ensure we have a return target for this auth flow
+        const existing = sessionStorage.getItem('auth_return_to');
+        if (!existing) {
+            sessionStorage.setItem('auth_return_to', location.state?.returnTo || '/');
+        }
+    }, [location.state, location.pathname]);
 
     const handleGoogle = () => {
         const plan = new URLSearchParams(location.search).get('plan');
         if (plan) {
             sessionStorage.setItem('oauth_post_login', JSON.stringify({ action: 'openOrder', plan }));
         }
+        sessionStorage.setItem('auth_return_to', sessionStorage.getItem('auth_return_to') || '/');
         window.location.href = `${API_BASE_URL}/api/auth/google`;
     };
 
@@ -44,22 +41,35 @@ const Register = () => {
         if (plan) {
             sessionStorage.setItem('oauth_post_login', JSON.stringify({ action: 'openOrder', plan }));
         }
+        sessionStorage.setItem('auth_return_to', sessionStorage.getItem('auth_return_to') || '/');
         window.location.href = `${API_BASE_URL}/api/auth/facebook`;
     };
 
     const handleSubmit = async (e) => {
         e.preventDefault(); setError(''); setLoading(true);
         try { await register(form); setShowOTP(true); }
-        catch (_) { } finally { setLoading(false); }
+        catch { /* toast shown by AuthContext */ } finally { setLoading(false); }
     };
 
     const handleVerify = async (email, otp) => {
         setLoading(true);
         try {
-            const data = await verifyOTP(email, otp);
+            await verifyOTP(email, otp);
             setShowOTP(false);
-            navigate(destPath(data.role));
-        } catch (_) { } finally { setLoading(false); }
+            const plan = new URLSearchParams(location.search).get('plan');
+            let target = sessionStorage.getItem('auth_return_to') || '/';
+            sessionStorage.removeItem('auth_return_to');
+            if (plan) {
+                try {
+                    const url = new URL(target, window.location.origin);
+                    url.searchParams.set('openOrder', plan);
+                    target = url.pathname + url.search + url.hash;
+                } catch {
+                    target = `/?openOrder=${encodeURIComponent(plan)}`;
+                }
+            }
+            navigate(target, { replace: true });
+        } catch { /* toast shown by AuthContext */ } finally { setLoading(false); }
     };
 
     const set = (k) => (e) => setForm({ ...form, [k]: e.target.value });

@@ -4,10 +4,12 @@ import {
     X, ShoppingCart, Trash2, Eye, CreditCard, MessageSquare,
     CheckCircle, Loader2, AlertCircle, AlertTriangle,
 } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { OrderContext } from '../context/OrderContext';
 import { AuthContext } from '../context/AuthContext';
 import { toast } from 'sonner';
 import { useGetMyOrdersQuery, useDeleteOrderMutation } from '../services/orderApi.js';
+import { apiClient } from '../config/api.js';
 
 /* ── Helpers ─────────────────────────────────────────── */
 const PLAN_COLORS = {
@@ -165,10 +167,9 @@ const PaymentModal = ({ order, onClose, onSuccess }) => {
         // 1. Create Razorpay order on backend
         let rzpData;
         try {
-            const { data } = await axios.post(`${API}/payments/razorpay`,
-                { orderId: order._id },
-                { headers: { Authorization: `Bearer ${user.token}` } }
-            );
+            const { data } = await apiClient.post('/payments/razorpay', { orderId: order._id }, {
+                headers: { Authorization: `Bearer ${user.token}` },
+            });
             rzpData = data;
         } catch (err) {
             setErrorMsg(err.response?.data?.message || 'Could not initiate payment. Please try again.');
@@ -206,7 +207,7 @@ const PaymentModal = ({ order, onClose, onSuccess }) => {
             handler: async (response) => {
                 // 4. Verify signature on backend
                 try {
-                    await axios.post(`${API}/payments/verify`, {
+                    await apiClient.post('/payments/verify', {
                         orderId: order._id,
                         razorpay_order_id: response.razorpay_order_id,
                         razorpay_payment_id: response.razorpay_payment_id,
@@ -215,7 +216,7 @@ const PaymentModal = ({ order, onClose, onSuccess }) => {
 
                     setPaid(true);
                     onSuccess(order._id);
-                    toast.success('Payment successful! Your project is now active.');
+                    toast.success('Payment successful. Your project request has been received.');
                 } catch (verifyErr) {
                     setErrorMsg(verifyErr.response?.data?.message || 'Payment verification failed. Contact support.');
                     setProcessing(false);
@@ -253,18 +254,18 @@ const PaymentModal = ({ order, onClose, onSuccess }) => {
                             </motion.div>
                             <div>
                                 <h3 className="text-xl font-extrabold mb-2" style={{ color: 'var(--text-primary)' }}>
-                                    Payment Successful! 🎉
+                                    Payment successful.
                                 </h3>
                                 <p className="text-sm leading-relaxed" style={{ color: 'var(--text-muted)' }}>
-                                    Your project <strong style={{ color: 'var(--text-primary)' }}>{order.projectName}</strong> has been confirmed. We'll reach out shortly to start development.
+                                    Your project request has been received.
                                 </p>
                             </div>
                             <div className="flex gap-3 flex-wrap justify-center">
-                                <button onClick={onClose}
+                                <button onClick={() => onClose?.({ action: 'viewOrder' })}
                                     className="secondary-btn px-5 py-2.5 rounded-xl font-bold text-sm">
-                                    View Orders
+                                    View Order
                                 </button>
-                                <button onClick={onClose}
+                                <button onClick={() => onClose?.({ action: 'messageDeveloper' })}
                                     className="primary-btn px-5 py-2.5 rounded-xl font-bold text-sm flex items-center gap-2">
                                     <MessageSquare className="w-4 h-4" /> Message Developer
                                 </button>
@@ -347,6 +348,7 @@ const PaymentModal = ({ order, onClose, onSuccess }) => {
 const CartDrawer = () => {
     const { user } = useContext(AuthContext);
     const { cartOpen, closeCart, cartItems, setCartItemsFromServer, removeCartItem } = useContext(OrderContext);
+    const navigate = useNavigate();
 
     const [loading, setLoading] = useState(false);
     const [viewOrder, setViewOrder] = useState(null);
@@ -405,7 +407,18 @@ const CartDrawer = () => {
             {payOrder && (
                 <PaymentModal
                     order={payOrder}
-                    onClose={() => setPayOrder(null)}
+                    onClose={(opts) => {
+                        const action = opts?.action;
+                        const order = payOrder;
+                        setPayOrder(null);
+                        if (action === 'viewOrder') {
+                            setViewOrder(order);
+                        }
+                        if (action === 'messageDeveloper') {
+                            closeCart();
+                            navigate(`/dashboard?tab=chat&orderId=${encodeURIComponent(order._id)}`);
+                        }
+                    }}
                     onSuccess={handlePaymentSuccess}
                 />
             )}
@@ -531,13 +544,30 @@ const CartDrawer = () => {
                                                     border: '1px solid var(--border)',
                                                     color: 'var(--text-secondary)',
                                                 }}>
-                                                <Eye className="w-3.5 h-3.5" /> View
+                                                <Eye className="w-3.5 h-3.5" /> View Details
                                             </button>
 
                                             {order.paymentStatus !== 'Completed' && (
                                                 <button onClick={() => setPayOrder(order)}
                                                     className="flex-1 primary-btn flex items-center justify-center gap-1.5 py-2 rounded-xl text-xs font-bold">
                                                     <CreditCard className="w-3.5 h-3.5" /> Pay Now
+                                                </button>
+                                            )}
+
+                                            {order.paymentStatus === 'Completed' && (
+                                                <button
+                                                    onClick={() => {
+                                                        closeCart();
+                                                        navigate(`/dashboard?tab=chat&orderId=${encodeURIComponent(order._id)}`);
+                                                    }}
+                                                    className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl text-xs font-bold transition-all"
+                                                    style={{
+                                                        background: 'var(--bg-card)',
+                                                        border: '1px solid var(--border)',
+                                                        color: 'var(--text-secondary)',
+                                                    }}
+                                                >
+                                                    <MessageSquare className="w-3.5 h-3.5" /> Message
                                                 </button>
                                             )}
 
@@ -557,7 +587,7 @@ const CartDrawer = () => {
                                 <div className="px-5 py-4 border-t flex-shrink-0" style={{ borderColor: 'var(--border)' }}>
                                     <div className="flex items-center gap-2 text-xs" style={{ color: 'var(--text-muted)' }}>
                                         <AlertCircle className="w-3.5 h-3.5 flex-shrink-0 text-blue-400" />
-                                        Click <strong>Pay Now</strong> to open secure Razorpay checkout. After payment, message the developer for updates.
+                                        Click <strong>Pay Now</strong> to open secure Razorpay checkout. After payment you can message the developer for updates.
                                     </div>
                                 </div>
                             )}

@@ -142,7 +142,7 @@ const OrderModal = () => {
             const data = await createOrder(form).unwrap();
             addCartItem(data);
             setDone(true);
-            toast.success('Order created! View your cart to proceed to payment.');
+            toast.success('Order created successfully. Please proceed to payment from the cart.');
         } catch (err) {
             toast.error(err.response?.data?.message || 'Failed to create order. Please try again.');
         } finally {
@@ -242,7 +242,7 @@ const OrderModal = () => {
                                             </h3>
                                             <p className="text-sm leading-relaxed" style={{ color: 'var(--text-muted)' }}>
                                                 Your project <strong style={{ color: 'var(--text-primary)' }}>{form.projectName}</strong> has been added to your cart.
-                                                Proceed to payment to confirm.
+                                                Order created successfully. Please proceed to payment from the cart.
                                             </p>
                                         </div>
                                         <div className="flex gap-3 pt-2 flex-wrap justify-center">

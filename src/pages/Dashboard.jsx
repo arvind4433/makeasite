@@ -70,7 +70,18 @@ const Dashboard = () => {
         }
 
         const params = new URLSearchParams(location.search);
+        const tabParam = params.get('tab');
+        const orderIdParam = params.get('orderId');
         const planParam = params.get('plan');
+        if (tabParam === 'chat') {
+            setActiveTab('chat');
+        } else if (tabParam === 'orders') {
+            setActiveTab('orders');
+        } else if (tabParam === 'new') {
+            setActiveTab('new');
+            setWizardStep(1);
+        }
+
         if (planParam) {
             setActiveTab('new');
             setWizardStep(1);
@@ -83,16 +94,24 @@ const Dashboard = () => {
             setFormData(prev => ({ ...prev, plan: planParam, budget: baseCost, pages: pagesCount }));
         }
 
-        fetchOrders();
+        fetchOrders(orderIdParam);
     }, [user, navigate, location]);
 
-    const fetchOrders = async () => {
+    const fetchOrders = async (orderIdToOpen) => {
         try {
             setLoading(true);
             const { data } = await axios.get('/api/orders/myorders', {
                 headers: { Authorization: `Bearer ${user.token}` }
             });
             setOrders(data);
+            if (orderIdToOpen) {
+                const match = data.find(o => o._id === orderIdToOpen);
+                if (match) {
+                    setSelectedOrder(match);
+                    setActiveTab('chat');
+                    fetchMessages(match._id);
+                }
+            }
         } catch (error) {
             console.error(error);
         } finally {

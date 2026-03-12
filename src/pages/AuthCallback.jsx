@@ -1,8 +1,6 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useContext } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { useContext } from 'react';
 import { AuthContext } from '../context/AuthContext';
-import { OrderContext } from '../context/OrderContext';
 import { toast } from 'sonner';
 import { AlertCircle } from 'lucide-react';
 import { motion } from 'framer-motion';
@@ -15,7 +13,6 @@ const ERROR_MESSAGES = {
     default: 'Sign-in failed. Please return to the login page.',
 };
 
-const APP_NAME = import.meta.env.VITE_APP_NAME || 'MakeASite';
 import Logo from '../components/Logo.jsx';
 
 /**
@@ -33,14 +30,15 @@ import Logo from '../components/Logo.jsx';
 const AuthCallback = () => {
     const [searchParams] = useSearchParams();
     const navigate = useNavigate();
-    const { user } = useContext(AuthContext);
-    const { openOrderModal } = useContext(OrderContext);
+    const { user, hydrateUser } = useContext(AuthContext);
     const [errorMsg, setErrorMsg] = useState('');
 
     useEffect(() => {
         // Already logged in — just go home
         if (user) {
-            navigate('/', { replace: true });
+            const returnTo = sessionStorage.getItem('auth_return_to');
+            sessionStorage.removeItem('auth_return_to');
+            navigate(returnTo || '/', { replace: true });
             return;
         }
 
@@ -59,30 +57,38 @@ const AuthCallback = () => {
                 const parsed = JSON.parse(decodeURIComponent(data));
                 if (!parsed.token) throw new Error('No token in response');
 
-                // Persist user
-                localStorage.setItem('userInfo', JSON.stringify(parsed));
+                // Hydrate session (AuthContext + RTK auth slice + localStorage)
+                hydrateUser(parsed);
 
                 // Read post-login action from sessionStorage
                 const postLoginRaw = sessionStorage.getItem('oauth_post_login');
                 sessionStorage.removeItem('oauth_post_login');
+                const returnTo = sessionStorage.getItem('auth_return_to');
+                sessionStorage.removeItem('auth_return_to');
 
+                let target = returnTo || '/';
+                let planToOpen = null;
                 if (postLoginRaw) {
                     try {
                         const postLogin = JSON.parse(postLoginRaw);
                         if (postLogin.action === 'openOrder' && postLogin.plan) {
-                            // Navigate home, then open order modal
-                            toast.success(`Welcome${parsed.name ? ', ' + parsed.name.split(' ')[0] : ''}! Signed in.`);
-                            // Use replace to go back to home, then fire modal
-                            window.location.replace(`/?openOrder=${postLogin.plan}`);
-                            return;
+                            planToOpen = postLogin.plan;
                         }
                     } catch (_) { }
                 }
 
-                // Default: go to homepage (not dashboard)
+                if (planToOpen) {
+                    try {
+                        const url = new URL(target, window.location.origin);
+                        url.searchParams.set('openOrder', planToOpen);
+                        target = url.pathname + url.search + url.hash;
+                    } catch (_) {
+                        target = `/?openOrder=${encodeURIComponent(planToOpen)}`;
+                    }
+                }
+
                 toast.success(`Welcome${parsed.name ? ', ' + parsed.name.split(' ')[0] : ''}! Signed in.`);
-                // Admin goes to admin panel
-                window.location.replace(parsed.role === 'admin' ? '/admin-dashboard' : '/');
+                navigate(target, { replace: true });
             } catch (err) {
                 console.error('OAuth callback parse error:', err);
                 setErrorMsg('Something went wrong processing your login. Please try again.');

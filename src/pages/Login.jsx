@@ -9,7 +9,7 @@ import { API_BASE_URL } from '../config/api.js';
 const FB_ENABLED = !!import.meta.env.VITE_FACEBOOK_APP_ID;
 
 const Login = () => {
-    const { user, login, verifyOTP } = useContext(AuthContext);
+    const { login, verifyOTP } = useContext(AuthContext);
     const navigate = useNavigate();
     const location = useLocation();
     const [form, setForm] = useState({ email: '', password: '' });
@@ -19,17 +19,13 @@ const Login = () => {
     const [error, setError] = useState('');
     const [pendingEmail, setPendingEmail] = useState('');
 
-    // After login — go to homepage (not dashboard); admin goes to admin panel
     useEffect(() => {
-        if (user) {
-            if (user.role === 'admin') {
-                navigate('/admin-dashboard', { replace: true });
-            } else {
-                navigate('/', { replace: true });
-            }
+        // Ensure we have a return target for this auth flow
+        const existing = sessionStorage.getItem('auth_return_to');
+        if (!existing) {
+            sessionStorage.setItem('auth_return_to', location.state?.returnTo || '/');
         }
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [user]);
+    }, [location.state, location.pathname]);
 
     /* ── Social redirects ── */
     const handleGoogle = () => {
@@ -37,6 +33,7 @@ const Login = () => {
         if (plan) {
             sessionStorage.setItem('oauth_post_login', JSON.stringify({ action: 'openOrder', plan }));
         }
+        sessionStorage.setItem('auth_return_to', sessionStorage.getItem('auth_return_to') || '/');
         window.location.href = `${API_BASE_URL}/api/auth/google`;
     };
 
@@ -46,6 +43,7 @@ const Login = () => {
         if (plan) {
             sessionStorage.setItem('oauth_post_login', JSON.stringify({ action: 'openOrder', plan }));
         }
+        sessionStorage.setItem('auth_return_to', sessionStorage.getItem('auth_return_to') || '/');
         window.location.href = `${API_BASE_URL}/api/auth/facebook`;
     };
 
@@ -58,7 +56,7 @@ const Login = () => {
             await login(form.email, form.password);
             setPendingEmail(form.email);
             setShowOTP(true);
-        } catch (_) {
+        } catch {
             // Error shown by AuthContext toast
         } finally {
             setLoading(false);
@@ -68,10 +66,23 @@ const Login = () => {
     const handleVerify = async (email, otp) => {
         setLoading(true);
         try {
-            const data = await verifyOTP(email, otp);
+            await verifyOTP(email, otp);
             setShowOTP(false);
-            // Navigation happens via useEffect above
-        } catch (_) {
+            const plan = new URLSearchParams(location.search).get('plan');
+            let target = sessionStorage.getItem('auth_return_to') || '/';
+            sessionStorage.removeItem('auth_return_to');
+            if (plan) {
+                try {
+                    const url = new URL(target, window.location.origin);
+                    url.searchParams.set('openOrder', plan);
+                    target = url.pathname + url.search + url.hash;
+                } catch {
+                    target = `/?openOrder=${encodeURIComponent(plan)}`;
+                }
+            }
+            navigate(target, { replace: true });
+        } catch {
+            // Error toast shown by AuthContext
         } finally { setLoading(false); }
     };
 

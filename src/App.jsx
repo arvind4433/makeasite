@@ -55,7 +55,7 @@ const AppInner = () => {
   const { user } = useContext(AuthContext);
   const location = useLocation();
   const hideFooter = isAuthPath(location.pathname);
-  const { openOrderModal, setPendingPlan } = useOrder();
+  const { openOrderModal } = useOrder();
 
   // Login modal state
   const [loginModalOpen, setLoginModalOpen] = useState(false);
@@ -78,7 +78,7 @@ const AppInner = () => {
       const ctx = e.detail?.context || 'general';
       if (user) {
         // User is already logged in — open order modal directly
-        if (ctx === 'plan') openOrderModal(null); // plan already set via setPendingPlan
+        if (ctx === 'plan') openOrderModal(null);
       } else {
         setLoginContext(ctx);
         setLoginModalOpen(true);
@@ -150,8 +150,10 @@ function App() {
   const [initialLoading, setInitialLoading] = useState(true);
 
   useEffect(() => {
-    const timer = setTimeout(() => setInitialLoading(false), 1200);
-    return () => clearTimeout(timer);
+    // Show a brief branded loader until the first paint.
+    // Avoid artificial delays: hide as soon as the app is ready to render.
+    const raf = requestAnimationFrame(() => setInitialLoading(false));
+    return () => cancelAnimationFrame(raf);
   }, []);
 
   return (
