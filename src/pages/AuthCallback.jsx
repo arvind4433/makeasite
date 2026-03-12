@@ -4,7 +4,7 @@ import { useContext } from 'react';
 import { AuthContext } from '../context/AuthContext';
 import { OrderContext } from '../context/OrderContext';
 import { toast } from 'sonner';
-import { Hexagon, AlertCircle } from 'lucide-react';
+import { AlertCircle } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 const ERROR_MESSAGES = {
@@ -15,7 +15,8 @@ const ERROR_MESSAGES = {
     default: 'Sign-in failed. Please return to the login page.',
 };
 
-const APP_NAME = import.meta.env.VITE_APP_NAME || 'WebDevPro';
+const APP_NAME = import.meta.env.VITE_APP_NAME || 'MakeASite';
+import Logo from '../components/Logo.jsx';
 
 /**
  * /auth/callback
@@ -104,10 +105,7 @@ const AuthCallback = () => {
                     <div className="relative w-16 h-16">
                         <div className="w-16 h-16 rounded-full border-4 border-red-200 dark:border-red-900 border-t-red-600 dark:border-t-red-500 animate-spin absolute inset-0" />
                         <div className="absolute inset-0 flex items-center justify-center">
-                            <div className="p-2 rounded-lg text-white"
-                                style={{ background: 'linear-gradient(135deg,#dc2626,#b91c1c)' }}>
-                                <Hexagon className="w-5 h-5 fill-current" />
-                            </div>
+                            <Logo showText={false} size={32} />
                         </div>
                     </div>
                     <div className="text-center">

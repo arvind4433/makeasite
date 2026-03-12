@@ -5,8 +5,7 @@ import { ArrowRight, Eye, EyeOff, AlertCircle } from 'lucide-react';
 import OTPModal from '../components/OTPModal';
 import { AuthLayout, AuthHeader, AuthCard } from '../components/AuthComponents';
 import { motion, AnimatePresence } from 'framer-motion';
-
-const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
+import { API_BASE_URL } from '../config/api.js';
 const FB_ENABLED = !!import.meta.env.VITE_FACEBOOK_APP_ID;
 
 const Login = () => {
@@ -38,7 +37,7 @@ const Login = () => {
         if (plan) {
             sessionStorage.setItem('oauth_post_login', JSON.stringify({ action: 'openOrder', plan }));
         }
-        window.location.href = `${API_BASE}/api/auth/google`;
+        window.location.href = `${API_BASE_URL}/api/auth/google`;
     };
 
     const handleFacebook = () => {
@@ -47,7 +46,7 @@ const Login = () => {
         if (plan) {
             sessionStorage.setItem('oauth_post_login', JSON.stringify({ action: 'openOrder', plan }));
         }
-        window.location.href = `${API_BASE}/api/auth/facebook`;
+        window.location.href = `${API_BASE_URL}/api/auth/facebook`;
     };
 
     /* ── Email / password ── */

@@ -2,7 +2,7 @@ import { motion } from 'framer-motion';
 import { Users, Code2, Target, Award, Heart, Zap } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
-const APP_NAME = import.meta.env.VITE_APP_NAME || 'WebDevPro';
+const APP_NAME = import.meta.env.VITE_APP_NAME || 'MakeASite';
 
 const values = [
     { icon: Code2, title: 'Clean Code', desc: 'We write well-structured, maintainable code — following best practices and modern standards on every project.' },

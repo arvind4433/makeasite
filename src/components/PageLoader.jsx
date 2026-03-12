@@ -1,11 +1,7 @@
 import { motion, AnimatePresence } from 'framer-motion';
-import { Hexagon } from 'lucide-react';
+import Logo from './Logo.jsx';
 
-const APP_NAME = import.meta.env.VITE_APP_NAME || 'WebDevPro';
-// Split name: everything before "Pro" = white, "Pro" = red
-const nameParts = APP_NAME.match(/^(.*?)(Pro)?$/) || [APP_NAME, APP_NAME, ''];
-const nameBase = nameParts[1] || APP_NAME;
-const nameAccent = nameParts[2] || '';
+const APP_NAME = import.meta.env.VITE_APP_NAME || 'MakeASite';
 
 const NUM_DOTS = 8;
 
@@ -112,19 +108,13 @@ const PageLoader = ({ visible }) => {
                         <motion.div
                             animate={{ scale: [1, 1.06, 1] }}
                             transition={{ repeat: Infinity, duration: 2.2, ease: 'easeInOut' }}
-                            className="relative z-10 rounded-2xl flex items-center justify-center"
-                            style={{
-                                width: 48,
-                                height: 48,
-                                background: 'linear-gradient(135deg, #dc2626 0%, #991b1b 100%)',
-                                boxShadow: '0 0 24px rgba(220,38,38,0.55), 0 0 48px rgba(220,38,38,0.2)',
-                            }}
+                            className="relative z-10 flex items-center justify-center"
                         >
-                            <Hexagon className="text-white fill-current" size={24} />
+                            <Logo showText={false} size={42} />
                         </motion.div>
                     </div>
 
-                    {/* Brand name: base = white, accent = red */}
+                    {/* Brand name */}
                     <motion.div
                         initial={{ opacity: 0, y: 10 }}
                         animate={{ opacity: 1, y: 0 }}
@@ -132,8 +122,7 @@ const PageLoader = ({ visible }) => {
                         className="mt-7 flex items-baseline"
                         style={{ fontFamily: "'Poppins', sans-serif", fontWeight: 700, fontSize: '1.35rem', letterSpacing: '-0.02em' }}
                     >
-                        <span style={{ color: '#f1f5f9' }}>{nameBase}</span>
-                        {nameAccent && <span style={{ color: '#ef4444' }}>{nameAccent}</span>}
+                        <span style={{ color: '#f1f5f9' }}>{APP_NAME}</span>
                     </motion.div>
 
                     {/* Subtitle with blinking cursor */}

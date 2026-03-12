@@ -3,12 +3,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { X, CheckCircle, ChevronRight, Upload, AlertCircle, Loader2 } from 'lucide-react';
 import { AuthContext } from '../context/AuthContext';
 import { OrderContext } from '../context/OrderContext';
-import axios from 'axios';
 import { toast } from 'sonner';
-
-const API = import.meta.env.VITE_API_BASE_URL
-    ? `${import.meta.env.VITE_API_BASE_URL}/api`
-    : '/api';
+import { useCreateOrderMutation } from '../services/orderApi.js';
 
 const PLAN_DEFAULTS = {
     basic: { budget: 3000, pages: 3, label: 'Basic Website (3,000 SAR)' },
@@ -67,6 +63,7 @@ const STEPS = ['Project Info', 'Features', 'Description', 'Confirm'];
 const OrderModal = () => {
     const { user } = useContext(AuthContext);
     const { orderModalOpen, closeOrderModal, pendingPlan, addCartItem, openCart } = useContext(OrderContext);
+    const [createOrder] = useCreateOrderMutation();
 
     const [step, setStep] = useState(0);
     const [form, setForm] = useState(INITIAL_FORM);
@@ -142,9 +139,7 @@ const OrderModal = () => {
         if (!validateStep()) return;
         setSubmitting(true);
         try {
-            const { data } = await axios.post(`${API}/orders`, form, {
-                headers: { Authorization: `Bearer ${user.token}` },
-            });
+            const data = await createOrder(form).unwrap();
             addCartItem(data);
             setDone(true);
             toast.success('Order created! View your cart to proceed to payment.');

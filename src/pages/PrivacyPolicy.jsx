@@ -27,7 +27,7 @@ const PrivacyPolicy = () => (
                 <div className="card p-8 sm:p-12">
 
                     <p className="text-slate-600 dark:text-slate-400 text-sm leading-relaxed mb-10">
-                        At WebDevPro, we are committed to protecting your personal information and your right to privacy. This policy describes how we collect, use, and protect the information you provide when using our website and services.
+                        At MakeASite, we are committed to protecting your personal information and your right to privacy. This policy describes how we collect, use, and protect the information you provide when using our website and services.
                     </p>
 
                     <Section title="1. Information We Collect">

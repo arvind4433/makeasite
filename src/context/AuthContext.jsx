@@ -1,13 +1,17 @@
 import { createContext, useState, useEffect, useContext } from 'react';
-import axios from 'axios';
 import { toast } from 'sonner';
 import { LoadingContext } from './LoadingContext';
+import { useDispatch } from 'react-redux';
+import { setCredentials, clearCredentials } from '../features/auth/authSlice.js';
+import {
+    useLoginMutation,
+    useVerifyOtpMutation,
+    useRegisterMutation,
+    useForgotPasswordMutation,
+    useResetPasswordMutation,
+} from '../services/authApi.js';
 
 export const AuthContext = createContext();
-
-const API = import.meta.env.VITE_API_BASE_URL
-    ? `${import.meta.env.VITE_API_BASE_URL}/api`
-    : '/api';
 
 /* ── Persist helper ─────────────────────────────────── */
 const persist = (data) => {
@@ -18,6 +22,12 @@ export const AuthProvider = ({ children }) => {
     const [user, setUser] = useState(null);
     const [loading, setLoading] = useState(true);
     const { startLoading, stopLoading } = useContext(LoadingContext);
+    const dispatch = useDispatch();
+    const [loginMutation] = useLoginMutation();
+    const [verifyOtpMutation] = useVerifyOtpMutation();
+    const [registerMutation] = useRegisterMutation();
+    const [forgotPasswordMutation] = useForgotPasswordMutation();
+    const [resetPasswordMutation] = useResetPasswordMutation();
 
     /* Restore session from localStorage */
     useEffect(() => {
@@ -32,8 +42,7 @@ export const AuthProvider = ({ children }) => {
     const login = async (email, password) => {
         startLoading();
         try {
-            const { data } = await axios.post(`${API}/auth/login`, { email, password });
-            // Success: OTP was sent. Return data so caller can show OTP modal.
+            const data = await loginMutation({ email, password }).unwrap();
             return data;
         } catch (err) {
             toast.error(err.response?.data?.message || 'Login failed');
@@ -45,9 +54,10 @@ export const AuthProvider = ({ children }) => {
     const verifyOTP = async (email, otp) => {
         startLoading();
         try {
-            const { data } = await axios.post(`${API}/auth/verify-otp`, { email, otp });
+            const data = await verifyOtpMutation({ email, otp }).unwrap();
             setUser(data);
             persist(data);
+            dispatch(setCredentials(data));
             toast.success(`Welcome${data.name ? ', ' + data.name.split(' ')[0] : ''}! You are now signed in.`);
             return data;
         } catch (err) {
@@ -60,7 +70,7 @@ export const AuthProvider = ({ children }) => {
     const register = async (userData) => {
         startLoading();
         try {
-            const { data } = await axios.post(`${API}/auth/register`, userData);
+            const data = await registerMutation(userData).unwrap();
             toast.success(data.message || 'Registration successful. OTP sent to your email.');
             return data;
         } catch (err) {
@@ -73,7 +83,7 @@ export const AuthProvider = ({ children }) => {
     const forgotPassword = async (email) => {
         startLoading();
         try {
-            const { data } = await axios.post(`${API}/auth/forgot-password`, { email });
+            const data = await forgotPasswordMutation({ email }).unwrap();
             toast.success(data.message);
             return data;
         } catch (err) {
@@ -85,7 +95,7 @@ export const AuthProvider = ({ children }) => {
     const resetPassword = async (email, otp, newPassword) => {
         startLoading();
         try {
-            const { data } = await axios.post(`${API}/auth/reset-password`, { email, otp, newPassword });
+            const data = await resetPasswordMutation({ email, otp, newPassword }).unwrap();
             toast.success(data.message || 'Password reset successfully!');
             return data;
         } catch (err) {
@@ -98,8 +108,10 @@ export const AuthProvider = ({ children }) => {
     const googleLogin = async (credential) => {
         startLoading();
         try {
-            const { data } = await axios.post(`${API}/auth/google`, { credential });
-            setUser(data); persist(data);
+            const { data } = await apiClient.post('/auth/google', { credential });
+            setUser(data);
+            persist(data);
+            dispatch(setCredentials(data));
             toast.success(`Welcome${data.name ? ', ' + data.name.split(' ')[0] : ''}! Signed in with Google.`);
             return data;
         } catch (err) {
@@ -112,8 +124,10 @@ export const AuthProvider = ({ children }) => {
     const facebookLogin = async (accessToken, userID) => {
         startLoading();
         try {
-            const { data } = await axios.post(`${API}/auth/facebook`, { accessToken, userID });
-            setUser(data); persist(data);
+            const { data } = await apiClient.post('/auth/facebook', { accessToken, userID });
+            setUser(data);
+            persist(data);
+            dispatch(setCredentials(data));
             toast.success(`Welcome${data.name ? ', ' + data.name.split(' ')[0] : ''}! Signed in with Facebook.`);
             return data;
         } catch (err) {
@@ -127,6 +141,7 @@ export const AuthProvider = ({ children }) => {
     const logout = () => {
         setUser(null);
         localStorage.removeItem('userInfo');
+        dispatch(clearCredentials());
         toast.info('Signed out successfully.');
     };
 

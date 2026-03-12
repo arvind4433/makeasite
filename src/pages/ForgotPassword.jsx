@@ -2,30 +2,24 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowRight, ArrowLeft, Mail, CheckCircle2 } from 'lucide-react';
 import { AuthLayout, AuthHeader, AuthCard } from '../components/AuthComponents';
-
-const API = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+import { useForgotPasswordMutation } from '../services/authApi.js';
 
 const ForgotPassword = () => {
     const [email, setEmail] = useState('');
     const [loading, setLoading] = useState(false);
     const [sent, setSent] = useState(false);
     const [error, setError] = useState('');
+    const [forgotPassword] = useForgotPasswordMutation();
 
     const handleSubmit = async (e) => {
         e.preventDefault();
         setError('');
         setLoading(true);
         try {
-            const res = await fetch(`${API}/api/auth/forgot-password`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ email }),
-            });
-            const data = await res.json();
-            if (!res.ok) throw new Error(data.message || 'Something went wrong');
+            await forgotPassword({ email }).unwrap();
             setSent(true);
         } catch (err) {
-            setError(err.message);
+            setError(err?.data?.message || err?.message || 'Something went wrong');
         } finally {
             setLoading(false);
         }

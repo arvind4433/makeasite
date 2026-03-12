@@ -1,12 +1,14 @@
 import { useState, useContext, useEffect, useRef } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Menu, X, Sun, Moon, Hexagon, ChevronRight, ArrowRight, ChevronDown, LayoutDashboard, Settings, LogOut, ShoppingCart } from 'lucide-react';
+import { Menu, X, Sun, Moon, ChevronRight, ArrowRight, ChevronDown, LayoutDashboard, Settings, LogOut, ShoppingCart } from 'lucide-react';
 import { AuthContext } from '../context/AuthContext';
 import { ThemeContext } from '../context/ThemeContext';
 import { OrderContext } from '../context/OrderContext';
 import { motion, AnimatePresence } from 'framer-motion';
+import Logo from './Logo.jsx';
+import { useSelector } from 'react-redux';
 
-const APP_NAME = import.meta.env.VITE_APP_NAME || 'WebDevPro';
+const APP_NAME = import.meta.env.VITE_APP_NAME || 'MakeASite';
 
 const navLinks = [
     { name: 'Home', path: '/' },
@@ -101,7 +103,8 @@ const CartButton = ({ count, onClick }) => (
 
 /* ── Navbar ──────────────────────────────────────────── */
 const Navbar = ({ onOpenLogin }) => {
-    const { user, logout } = useContext(AuthContext);
+    const { logout } = useContext(AuthContext);
+    const user = useSelector((state) => state.auth.user);
     const { theme, toggleTheme } = useContext(ThemeContext);
     const { cartBadge, openCart } = useContext(OrderContext);
     const [isOpen, setIsOpen] = useState(false);
@@ -145,13 +148,7 @@ const Navbar = ({ onOpenLogin }) => {
 
                     {/* Logo */}
                     <Link to="/" className="flex items-center gap-2.5 group flex-shrink-0">
-                        <div className="p-1.5 rounded-lg text-white transition-shadow group-hover:shadow-[0_0_16px_rgba(220,38,38,0.5)]"
-                            style={{ background: 'linear-gradient(135deg,#dc2626,#b91c1c)' }}>
-                            <Hexagon className="h-5 w-5 fill-current" />
-                        </div>
-                        <span className="font-bold text-xl tracking-tight text-slate-900 dark:text-white">
-                            {APP_NAME.replace('Pro', '')}<span className="text-red-600 dark:text-red-500">Pro</span>
-                        </span>
+                        <Logo />
                     </Link>
 
                     {/* Desktop Nav */}

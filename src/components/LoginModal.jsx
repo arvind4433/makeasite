@@ -1,11 +1,11 @@
 import { useState, useContext } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, ArrowRight, Eye, EyeOff, AlertCircle, Loader2, Hexagon } from 'lucide-react';
+import { X, ArrowRight, Eye, EyeOff, AlertCircle, Loader2 } from 'lucide-react';
 import { AuthContext } from '../context/AuthContext';
 import { OrderContext } from '../context/OrderContext';
 import OTPModal from './OTPModal';
-
-const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
+import { API_BASE_URL } from '../config/api.js';
+import Logo from './Logo.jsx';
 
 /**
  * LoginModal — displayed inline over any page when:
@@ -67,7 +67,7 @@ const LoginModal = ({ isOpen, onClose, loginContext = 'general' }) => {
         if (loginContext === 'plan' && pendingPlan) {
             sessionStorage.setItem('oauth_post_login', JSON.stringify({ action: 'openOrder', plan: pendingPlan }));
         }
-        window.location.href = `${API_BASE}/api/auth/google`;
+        window.location.href = `${API_BASE_URL}/api/auth/google`;
     };
 
     if (!isOpen) return null;
@@ -103,11 +103,10 @@ const LoginModal = ({ isOpen, onClose, loginContext = 'general' }) => {
                             {/* Header */}
                             <div className="flex items-center justify-between px-6 pt-6 pb-4">
                                 <div className="flex items-center gap-3">
-                                    <div className="p-1.5 rounded-lg text-white"
-                                        style={{ background: 'linear-gradient(135deg,#dc2626,#b91c1c)' }}>
-                                        <Hexagon className="w-5 h-5 fill-current" />
+                                    <div className="flex items-center gap-2">
+                                        <Logo showText={false} size={26} />
                                     </div>
-                                    <div>
+                                    <div className="ml-1">
                                         <h2 className="font-extrabold text-lg leading-none" style={{ color: 'var(--text-primary)' }}>Sign in</h2>
                                         {loginContext === 'plan' && (
                                             <p className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>

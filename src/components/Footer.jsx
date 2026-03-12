@@ -1,7 +1,8 @@
-import { Hexagon, Github, Twitter, Linkedin, Instagram, ArrowRight } from 'lucide-react';
+import { Github, Twitter, Linkedin, Instagram, ArrowRight } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import Logo from './Logo.jsx';
 
-const APP_NAME = import.meta.env.VITE_APP_NAME || 'WebDevPro';
+const APP_NAME = import.meta.env.VITE_APP_NAME || 'MakeASite';
 
 const socials = [
     { icon: Twitter, href: '#', label: 'Twitter' },
@@ -43,13 +44,7 @@ const Footer = () => (
                 {/* Brand */}
                 <div className="lg:col-span-4 space-y-6">
                     <Link to="/" className="flex items-center gap-2.5 w-fit group">
-                        <div className="p-1.5 rounded-lg text-white group-hover:shadow-[0_0_16px_rgba(220,38,38,0.4)] transition-shadow"
-                            style={{ background: 'linear-gradient(135deg,#dc2626,#b91c1c)' }}>
-                            <Hexagon className="h-5 w-5 fill-current" />
-                        </div>
-                        <span className="font-bold text-xl tracking-tight text-slate-900 dark:text-white">
-                            {APP_NAME.replace('Pro', '')}<span className="text-red-600 dark:text-red-500">Pro</span>
-                        </span>
+                        <Logo />
                     </Link>
 
                     <p className="text-sm text-slate-500 leading-relaxed max-w-xs">

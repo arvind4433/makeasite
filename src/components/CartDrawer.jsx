@@ -6,12 +6,8 @@ import {
 } from 'lucide-react';
 import { OrderContext } from '../context/OrderContext';
 import { AuthContext } from '../context/AuthContext';
-import axios from 'axios';
 import { toast } from 'sonner';
-
-const API = import.meta.env.VITE_API_BASE_URL
-    ? `${import.meta.env.VITE_API_BASE_URL}/api`
-    : '/api';
+import { useGetMyOrdersQuery, useDeleteOrderMutation } from '../services/orderApi.js';
 
 /* ── Helpers ─────────────────────────────────────────── */
 const PLAN_COLORS = {
@@ -192,7 +188,7 @@ const PaymentModal = ({ order, onClose, onSuccess }) => {
             key: rzpData.key,
             amount: rzpData.amount,
             currency: rzpData.currency,
-            name: 'WebDevPro',
+            name: 'MakeASite',
             description: `${rzpData.projectName} — ${rzpData.plan} Plan`,
             order_id: rzpData.id,
             prefill: {
@@ -359,18 +355,20 @@ const CartDrawer = () => {
     // Confirmation dialog state
     const [confirmDialog, setConfirmDialog] = useState({ open: false, orderId: null, deleting: false });
 
+    const { data: serverOrders, isFetching } = useGetMyOrdersQuery(undefined, {
+        skip: !cartOpen || !user,
+    });
+    const [deleteOrder] = useDeleteOrderMutation();
+
     // Load orders from server when drawer opens
     useEffect(() => {
         if (cartOpen && user) {
-            setLoading(true);
-            axios.get(`${API}/orders/myorders`, {
-                headers: { Authorization: `Bearer ${user.token}` },
-            })
-                .then(({ data }) => setCartItemsFromServer(data))
-                .catch(err => toast.error(err.response?.data?.message || 'Failed to load orders'))
-                .finally(() => setLoading(false));
+            setLoading(isFetching);
+            if (serverOrders) {
+                setCartItemsFromServer(serverOrders);
+            }
         }
-    }, [cartOpen, user, setCartItemsFromServer]);
+    }, [cartOpen, user, serverOrders, isFetching, setCartItemsFromServer]);
 
     /* ── Delete flow ── */
     const askDelete = (orderId) => setConfirmDialog({ open: true, orderId, deleting: false });
@@ -379,9 +377,7 @@ const CartDrawer = () => {
     const confirmDelete = async () => {
         setConfirmDialog(prev => ({ ...prev, deleting: true }));
         try {
-            await axios.delete(`${API}/orders/${confirmDialog.orderId}`, {
-                headers: { Authorization: `Bearer ${user.token}` },
-            });
+            await deleteOrder(confirmDialog.orderId).unwrap();
             removeCartItem(confirmDialog.orderId);
             toast.success('Order removed successfully.');
             setConfirmDialog({ open: false, orderId: null, deleting: false });

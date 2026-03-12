@@ -5,7 +5,7 @@ import { ChevronLeft, ChevronRight, Star, Quote } from "lucide-react";
 /* testimonials data */
 const testimonials = [
   {
-    body: "Working with WebDevPro was a game-changer.",
+    body: "Working with MakeASite was a game-changer.",
     name: "Sarah Jenkins",
     role: "CEO",
     avatar:

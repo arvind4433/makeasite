@@ -30,7 +30,7 @@ const TermsPage = () => (
                     </p>
 
                     <Section title="1. Services">
-                        <p>WebDevPro provides custom website and web application development services. The specific deliverables, timeline, and price are agreed upon before work begins and documented in the order.</p>
+                        <p>MakeASite provides custom website and web application development services. The specific deliverables, timeline, and price are agreed upon before work begins and documented in the order.</p>
                     </Section>
 
                     <Section title="2. Ordering & Payment">
@@ -67,7 +67,7 @@ const TermsPage = () => (
                     </Section>
 
                     <Section title="8. Limitation of Liability">
-                        <p>WebDevPro shall not be liable for any indirect, incidental, or consequential damages arising from the use of our services. Our liability is limited to the amount paid for the specific project.</p>
+                        <p>MakeASite shall not be liable for any indirect, incidental, or consequential damages arising from the use of our services. Our liability is limited to the amount paid for the specific project.</p>
                     </Section>
 
                     <Section title="9. Governing Law">

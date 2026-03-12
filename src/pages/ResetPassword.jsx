@@ -2,8 +2,7 @@ import { useState } from 'react';
 import { useNavigate, useParams, Link } from 'react-router-dom';
 import { ArrowRight, Eye, EyeOff, ArrowLeft, CheckCircle2 } from 'lucide-react';
 import { AuthLayout, AuthHeader, AuthCard } from '../components/AuthComponents';
-
-const API = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+import { useResetPasswordMutation } from '../services/authApi.js';
 
 const ResetPassword = () => {
     const { token } = useParams();
@@ -13,6 +12,7 @@ const ResetPassword = () => {
     const [loading, setLoading] = useState(false);
     const [done, setDone] = useState(false);
     const [error, setError] = useState('');
+    const [resetPasswordMutation] = useResetPasswordMutation();
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -21,17 +21,11 @@ const ResetPassword = () => {
         if (form.password.length < 8) { setError('Password must be at least 8 characters'); return; }
         setLoading(true);
         try {
-            const res = await fetch(`${API}/api/auth/reset-password/${token}`, {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ password: form.password }),
-            });
-            const data = await res.json();
-            if (!res.ok) throw new Error(data.message || 'Reset failed');
+            await resetPasswordMutation({ token, password: form.password }).unwrap();
             setDone(true);
             setTimeout(() => navigate('/login'), 3000);
         } catch (err) {
-            setError(err.message);
+            setError(err?.data?.message || err?.message || 'Reset failed');
         } finally {
             setLoading(false);
         }

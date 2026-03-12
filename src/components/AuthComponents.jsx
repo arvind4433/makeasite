@@ -1,8 +1,8 @@
 /* Shared auth page layout + reusable primitives */
-import { Hexagon } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import Logo from './Logo.jsx';
 
-const APP_NAME = import.meta.env.VITE_APP_NAME || 'WebDevPro';
+const APP_NAME = import.meta.env.VITE_APP_NAME || 'MakeASite';
 
 /* Full-page wrapper */
 export const AuthLayout = ({ children }) => (
@@ -27,13 +27,7 @@ export const AuthLayout = ({ children }) => (
 export const AuthHeader = ({ title, subtitle }) => (
     <div className="text-center mb-8">
         <Link to="/" className="inline-flex items-center gap-2 mb-6 group">
-            <div className="p-2 rounded-xl text-white transition-shadow group-hover:shadow-[0_0_16px_rgba(220,38,38,0.5)]"
-                style={{ background: 'linear-gradient(135deg,#dc2626,#b91c1c)' }}>
-                <Hexagon className="h-5 w-5 fill-current" />
-            </div>
-            <span className="font-bold text-lg tracking-tight text-slate-900 dark:text-white">
-                {APP_NAME.replace('Pro', '')}<span className="text-red-600 dark:text-red-500">Pro</span>
-            </span>
+            <Logo />
         </Link>
         <h1 className="text-3xl font-extrabold tracking-tight text-slate-900 dark:text-white mb-2">{title}</h1>
         <p className="text-sm text-slate-500 dark:text-slate-400 font-medium">{subtitle}</p>
