@@ -60,6 +60,7 @@ const AppInner = () => {
   // Login modal state
   const [loginModalOpen, setLoginModalOpen] = useState(false);
   const [loginContext, setLoginContext] = useState('general');
+  const [loginInitialView, setLoginInitialView] = useState('login');
 
   // Handle plan-select → login → order flow from OAuth callback query param
   const [searchParams, setSearchParams] = useSearchParams();
@@ -76,11 +77,13 @@ const AppInner = () => {
   useEffect(() => {
     const handler = (e) => {
       const ctx = e.detail?.context || 'general';
+      const view = e.detail?.view || 'login';
       if (user) {
         // User is already logged in — open order modal directly
         if (ctx === 'plan') openOrderModal(null);
       } else {
         setLoginContext(ctx);
+        setLoginInitialView(view);
         setLoginModalOpen(true);
       }
     };
@@ -88,22 +91,27 @@ const AppInner = () => {
     return () => window.removeEventListener('open-login-modal', handler);
   }, [user, openOrderModal]);
 
-  const handleOpenLogin = () => {
+  const handleOpenLogin = (view = 'login') => {
     setLoginContext('general');
+    setLoginInitialView(view);
     setLoginModalOpen(true);
   };
+
 
   return (
     <>
       <PageLoader visible={isLoading} />
       <ScrollToTop />
 
-      {/* Global Overlays */}
-      <LoginModal
-        isOpen={loginModalOpen}
-        onClose={() => setLoginModalOpen(false)}
-        loginContext={loginContext}
-      />
+      {/* Global Overlays — LoginModal conditionally mounted so every open is a fresh mount */}
+      {loginModalOpen && (
+        <LoginModal
+          isOpen={loginModalOpen}
+          onClose={() => setLoginModalOpen(false)}
+          loginContext={loginContext}
+          initialView={loginInitialView}
+        />
+      )}
       <OrderModal />
       <CartDrawer />
 
