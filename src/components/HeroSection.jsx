@@ -201,7 +201,7 @@ const HeroSection = () => (
                             {/* KPI row */}
                             <div className="grid grid-cols-3 gap-3">
                                 {[
-                                    { label: 'Revenue', value: '2.4K SAR', delta: '+18%', up: true },
+                                    { label: 'Revenue', value: 'INR 2.4K', delta: '+18%', up: true },
                                     { label: 'Orders', value: '342', delta: '+7%', up: true },
                                     { label: 'Traffic', value: '18.2K', delta: '+32%', up: true },
                                 ].map((k) => (
@@ -288,7 +288,7 @@ const HeroSection = () => (
                     <motion.div animate={{ y: [0, 7, 0] }} transition={{ repeat: Infinity, duration: 4, ease: 'easeInOut', delay: 1.2 }}
                         className="absolute -bottom-4 -left-4 rounded-xl px-4 py-2.5 shadow-xl text-sm font-bold text-white"
                         style={{ background: 'linear-gradient(135deg,#dc2626,#b91c1c)' }}>
-                        Starting 3,000 SAR
+                        Starting INR 2,000
                     </motion.div>
                 </motion.div>
 

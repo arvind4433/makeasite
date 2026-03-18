@@ -95,19 +95,11 @@ const ConfirmDialog = ({ isOpen, onConfirm, onCancel, title, message, confirmLab
 const OrderDetailModal = ({ order, onClose }) => {
     if (!order) return null;
     const fields = [
-        ['Project', order.projectName],
-        ['Plan', order.plan],
-        ['Website Type', order.websiteType],
-        ['Pages', order.pages],
-        ['Business Category', order.businessCategory || order.businessType],
-        ['Design Style', order.designStyle],
-        ['Features', order.features?.join(', ') || 'None'],
-        ['Deadline', order.preferredDeadline || 'Flexible'],
-        ['Delivery', order.deliveryOption],
-        ['Contact Email', order.contactEmail],
-        ['Phone', order.phoneNumber],
-        ['References', order.referenceWebsites],
+        ['Project', order.title],
+        ['Plan', order.packageType],
         ['Description', order.description],
+        ['Deadline', order.deadline ? new Date(order.deadline).toLocaleDateString() : 'Flexible'],
+        ['Status', order.status],
     ].filter(([, v]) => v);
 
     return (
@@ -122,7 +114,7 @@ const OrderDetailModal = ({ order, onClose }) => {
                     <div className="flex items-center justify-between px-6 py-4 border-b flex-shrink-0"
                         style={{ borderColor: 'var(--border)' }}>
                         <div>
-                            <h3 className="font-extrabold text-lg" style={{ color: 'var(--text-primary)' }}>{order.projectName}</h3>
+                            <h3 className="font-extrabold text-lg" style={{ color: 'var(--text-primary)' }}>{order.title}</h3>
                             <StatusBadge status={order.status} />
                         </div>
                         <button onClick={onClose} className="w-8 h-8 rounded-xl flex items-center justify-center hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors">
@@ -141,7 +133,7 @@ const OrderDetailModal = ({ order, onClose }) => {
                         <div className="flex justify-between items-center">
                             <span className="text-sm font-bold" style={{ color: 'var(--text-muted)' }}>Estimated Budget</span>
                             <span className="text-xl font-black gradient-text">
-                                {order.budget > 0 ? `SAR ${order.budget.toLocaleString()}` : 'Custom'}
+                                {order.price > 0 ? `INR ${order.price.toLocaleString()}` : 'Custom'}
                             </span>
                         </div>
                     </div>
@@ -284,7 +276,7 @@ const PaymentModal = ({ order, onClose, onSuccess }) => {
                                     Secure Payment
                                 </h3>
                                 <p className="text-sm" style={{ color: 'var(--text-muted)' }}>
-                                    {order.projectName} — {order.plan} Plan
+                                    {order.title} — {order.packageType} Plan
                                 </p>
                             </div>
 
@@ -298,7 +290,7 @@ const PaymentModal = ({ order, onClose, onSuccess }) => {
                                     Amount Due
                                 </p>
                                 <p className="text-3xl font-black gradient-text">
-                                    {order.budget > 0 ? `SAR ${order.budget.toLocaleString()}` : 'Custom'}
+                                    {order.price > 0 ? `INR ${order.price.toLocaleString()}` : 'Custom'}
                                 </p>
                                 <p className="text-[11px] mt-1" style={{ color: 'var(--text-muted)' }}>
                                     Converted to INR at checkout
@@ -351,7 +343,6 @@ const CartDrawer = () => {
     const navigate = useNavigate();
 
     const [loading, setLoading] = useState(false);
-    const [viewOrder, setViewOrder] = useState(null);
     const [payOrder, setPayOrder] = useState(null);
 
     // Confirmation dialog state
@@ -403,7 +394,6 @@ const CartDrawer = () => {
     return (
         <>
             {/* Modals rendered outside the drawer so they're not clipped */}
-            {viewOrder && <OrderDetailModal order={viewOrder} onClose={() => setViewOrder(null)} />}
             {payOrder && (
                 <PaymentModal
                     order={payOrder}
@@ -412,11 +402,12 @@ const CartDrawer = () => {
                         const order = payOrder;
                         setPayOrder(null);
                         if (action === 'viewOrder') {
-                            setViewOrder(order);
+                            closeCart();
+                            navigate(`/orders/${order._id}`);
                         }
                         if (action === 'messageDeveloper') {
                             closeCart();
-                            navigate(`/dashboard?tab=chat&orderId=${encodeURIComponent(order._id)}`);
+                            navigate(`/dashboard?tab=messages&orderId=${encodeURIComponent(order._id)}`);
                         }
                     }}
                     onSuccess={handlePaymentSuccess}
@@ -501,29 +492,27 @@ const CartDrawer = () => {
                                                 <div className="flex items-center gap-2 mb-1 flex-wrap">
                                                     <span className="text-xs font-bold uppercase tracking-wider px-2 py-0.5 rounded-md"
                                                         style={{
-                                                            background: `${PLAN_COLORS[order.plan] || '#64748b'}18`,
-                                                            color: PLAN_COLORS[order.plan] || '#64748b',
+                                                            background: `${PLAN_COLORS[order.packageType] || '#64748b'}18`,
+                                                            color: PLAN_COLORS[order.packageType] || '#64748b',
                                                         }}>
-                                                        {order.plan}
+                                                        {order.packageType}
                                                     </span>
                                                     <StatusBadge status={order.status} />
                                                 </div>
                                                 <p className="font-extrabold text-sm truncate" style={{ color: 'var(--text-primary)' }}>
-                                                    {order.projectName}
+                                                    {order.title}
                                                 </p>
                                             </div>
                                             <div className="text-right flex-shrink-0">
                                                 <p className="font-black text-base gradient-text">
-                                                    {order.budget > 0 ? `SAR ${order.budget.toLocaleString()}` : 'Custom'}
+                                                    {order.price > 0 ? `INR ${order.price.toLocaleString()}` : 'Custom'}
                                                 </p>
                                             </div>
                                         </div>
 
                                         {/* Meta */}
                                         <div className="flex items-center gap-3 text-xs" style={{ color: 'var(--text-muted)' }}>
-                                            <span>{order.pages} pages</span>
-                                            <span>·</span>
-                                            <span>{order.websiteType || 'Website'}</span>
+                                            <span>{order.packageType || 'Website'}</span>
                                             <span>·</span>
                                             <span>{new Date(order.createdAt).toLocaleDateString()}</span>
                                         </div>
@@ -537,7 +526,10 @@ const CartDrawer = () => {
 
                                         {/* Actions */}
                                         <div className="flex gap-2 pt-1">
-                                            <button onClick={() => setViewOrder(order)}
+                                            <button onClick={() => {
+                                                closeCart();
+                                                navigate(`/orders/${order._id}`);
+                                            }}
                                                 className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl text-xs font-bold transition-all"
                                                 style={{
                                                     background: 'var(--bg-card)',
@@ -558,7 +550,7 @@ const CartDrawer = () => {
                                                 <button
                                                     onClick={() => {
                                                         closeCart();
-                                                        navigate(`/dashboard?tab=chat&orderId=${encodeURIComponent(order._id)}`);
+                                                        navigate(`/dashboard?tab=messages&orderId=${encodeURIComponent(order._id)}`);
                                                     }}
                                                     className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl text-xs font-bold transition-all"
                                                     style={{

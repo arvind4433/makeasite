@@ -1,319 +1,275 @@
-import { useState, useContext, useEffect, useRef } from 'react';
-import { Link, useLocation } from 'react-router-dom';
-import { Menu, X, Sun, Moon, ChevronRight, ArrowRight, ChevronDown, LayoutDashboard, Settings, LogOut, ShoppingCart, MessageSquare, User } from 'lucide-react';
-import { AuthContext } from '../context/AuthContext';
-import { ThemeContext } from '../context/ThemeContext';
-import { OrderContext } from '../context/OrderContext';
-import { motion, AnimatePresence } from 'framer-motion';
-import Logo from './Logo.jsx';
-import { useSelector } from 'react-redux';
-
-const APP_NAME = import.meta.env.VITE_APP_NAME || 'MakeASite';
+import { useState, useContext, useEffect, useRef, useMemo } from "react";
+import { Link, useLocation } from "react-router-dom";
+import { Menu, X, Sun, Moon, ChevronDown, LogOut, ShoppingCart, MessageSquare, User, CreditCard, Package, Settings, Send, Loader2 } from "lucide-react";
+import { AuthContext } from "../context/AuthContext";
+import { ThemeContext } from "../context/ThemeContext";
+import { OrderContext } from "../context/OrderContext";
+import { API_BASE_URL, apiClient } from "../config/api";
+import { motion, AnimatePresence } from "framer-motion";
+import Logo from "./Logo";
+import LogoutModal from "./LogoutModal";
+import { toast } from "sonner";
 
 const navLinks = [
-    { name: 'Home', path: '/' },
-    { name: 'Services', path: '/services' },
-    { name: 'Portfolio', path: '/portfolio' },
-    { name: 'Pricing', path: '/pricing' },
-    { name: 'Contact', path: '/contact' },
+  { name: "Home", path: "/" },
+  { name: "Services", path: "/services" },
+  { name: "Portfolio", path: "/portfolio" },
+  { name: "Pricing", path: "/pricing" },
+  { name: "Contact", path: "/contact" }
 ];
 
-/* ── Avatar fallback ────────────────────────────────── */
-const Avatar = ({ user, size = 8 }) => {
-    const initials = user?.name
-        ? user.name.split(' ').map((n) => n[0]).join('').slice(0, 2).toUpperCase()
-        : '?';
-    return user?.avatar ? (
-        <img src={user.avatar} alt={user.name} className={`w-${size} h-${size} rounded-full object-cover`} />
-    ) : (
-        <div className={`w-${size} h-${size} rounded-full flex items-center justify-center text-xs font-bold text-white`}
-            style={{ background: 'linear-gradient(135deg,#dc2626,#b91c1c)' }}>
-            {initials}
+const supportThread = { id: 'general', label: 'Live Support', orderId: null, unreadCount: 0, lastMessage: 'Need help? Start a conversation.' };
+
+const Avatar = ({ user }) => {
+  const initials = user?.name ? user.name.split(" ").map((n) => n[0]).join("").slice(0, 2).toUpperCase() : "?";
+  const avatarSrc = user?.avatar ? (user.avatar.startsWith('http') ? user.avatar : `${API_BASE_URL}${user.avatar}`) : null;
+
+  return user?.avatar ? (
+    <img src={avatarSrc} alt={user.name} className="w-9 h-9 rounded-full object-cover" />
+  ) : (
+    <div className="w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold text-white bg-red-600">{initials}</div>
+  );
+};
+
+const ProfileDropdown = ({ user, close, onRequestLogout }) => {
+  const items = [
+    { to: "/dashboard?tab=profile", label: "Profile", icon: User },
+    { to: "/dashboard?tab=payments", label: "Payments", icon: CreditCard },
+    { to: "/dashboard?tab=orders", label: "Orders", icon: Package },
+    { to: "/dashboard?tab=settings", label: "Settings", icon: Settings }
+  ];
+
+  return (
+    <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 8 }} className="absolute right-0 mt-2 w-64 rounded-2xl shadow-xl" style={{ background: 'var(--bg-card)', border: '1px solid var(--border-strong)' }}>
+      <div className="p-4 border-b" style={{ borderColor: 'var(--border)' }}>
+        <div className="font-semibold text-sm" style={{ color: 'var(--text-primary)' }}>{user?.name}</div>
+        <div className="text-xs mt-1" style={{ color: 'var(--text-secondary)' }}>{user?.email}</div>
+      </div>
+      <div className="p-2">
+        {items.map((item) => {
+          const Icon = item.icon;
+          return (
+            <Link key={item.label} to={item.to} onClick={close} className="flex items-center gap-2 p-3 rounded-xl hover:bg-black/5 dark:hover:bg-white/5">
+              <Icon size={16} />
+              {item.label}
+            </Link>
+          );
+        })}
+      </div>
+      <div className="border-t p-2" style={{ borderColor: 'var(--border)' }}>
+        <button onClick={() => { close(); onRequestLogout(); }} className="flex items-center gap-2 p-3 w-full text-red-600 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-xl">
+          <LogOut size={16} /> Sign Out
+        </button>
+      </div>
+    </motion.div>
+  );
+};
+
+const MessagesDropdown = ({ user, onClose }) => {
+  const [threads, setThreads] = useState([]);
+  const [selectedThreadId, setSelectedThreadId] = useState('general');
+  const [messages, setMessages] = useState([]);
+  const [draft, setDraft] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [sending, setSending] = useState(false);
+
+  const selectedThread = useMemo(() => selectedThreadId === 'general' ? supportThread : threads.find((thread) => thread.id === selectedThreadId) || supportThread, [selectedThreadId, threads]);
+
+  useEffect(() => {
+    const loadThreads = async () => {
+      try {
+        const { data } = await apiClient.get('/messages/threads');
+        setThreads(data);
+      } catch {
+        // ignore dropdown fetch failure
+      }
+    };
+    loadThreads();
+  }, []);
+
+  useEffect(() => {
+    const loadMessages = async () => {
+      setLoading(true);
+      try {
+        const id = selectedThread.orderId || 'general';
+        const { data } = await apiClient.get(`/messages/${id}`);
+        setMessages(data);
+        await apiClient.patch(`/messages/${id}/read`);
+      } catch {
+        toast.error('Failed to load messages');
+      } finally {
+        setLoading(false);
+      }
+    };
+    loadMessages();
+  }, [selectedThread]);
+
+  const handleSend = async (event) => {
+    event.preventDefault();
+    if (!draft.trim()) return;
+    setSending(true);
+    try {
+      await apiClient.post('/messages', { orderId: selectedThread.orderId || undefined, message: draft });
+      setDraft('');
+      const id = selectedThread.orderId || 'general';
+      const { data } = await apiClient.get(`/messages/${id}`);
+      setMessages(data);
+    } catch {
+      toast.error('Failed to send message');
+    } finally {
+      setSending(false);
+    }
+  };
+
+  return (
+    <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 8 }} className="absolute right-0 mt-2 w-[min(92vw,26rem)] overflow-hidden rounded-3xl shadow-2xl" style={{ background: 'var(--bg-card)', border: '1px solid var(--border-strong)' }}>
+      <div className="border-b px-4 py-4" style={{ borderColor: 'var(--border)' }}>
+        <div className="text-sm font-bold uppercase tracking-[0.18em]" style={{ color: 'var(--text-muted)' }}>Messages</div>
+        <div className="mt-1 text-sm" style={{ color: 'var(--text-secondary)' }}>Chat opens here from the top of the screen.</div>
+      </div>
+      <div className="grid max-h-[32rem] grid-cols-[10rem_minmax(0,1fr)]">
+        <div className="border-r p-3" style={{ borderColor: 'var(--border)' }}>
+          {[supportThread, ...threads].slice(0, 6).map((thread) => (
+            <button key={thread.id} type="button" onClick={() => setSelectedThreadId(thread.id)} className="mb-2 w-full rounded-2xl p-3 text-left" style={selectedThreadId === thread.id ? { background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.18)' } : { background: 'var(--bg-card-inner)', border: '1px solid var(--border)' }}>
+              <div className="text-sm font-bold truncate">{thread.label}</div>
+              <div className="mt-1 text-xs truncate" style={{ color: 'var(--text-secondary)' }}>{thread.lastMessage || 'Open chat'}</div>
+            </button>
+          ))}
         </div>
-    );
+        <div className="flex flex-col">
+          <div className="border-b px-4 py-3" style={{ borderColor: 'var(--border)' }}>
+            <div className="font-bold">{selectedThread.label}</div>
+            <div className="text-xs" style={{ color: 'var(--text-secondary)' }}>{selectedThread.orderId ? 'Order conversation' : 'General support chat'}</div>
+          </div>
+          <div className="flex-1 space-y-3 overflow-y-auto p-4" style={{ background: 'linear-gradient(180deg, var(--bg-card), var(--bg-card-inner))' }}>
+            {loading ? <div className="flex justify-center py-6"><Loader2 className="h-5 w-5 animate-spin" /></div> : messages.length === 0 ? <div className="text-sm" style={{ color: 'var(--text-secondary)' }}>No messages yet.</div> : messages.map((message) => {
+              const mine = String(message.sender?._id || message.sender) === String(user.id || user._id);
+              return <div key={message._id} className={`flex ${mine ? 'justify-end' : 'justify-start'}`}><div className="max-w-[80%] rounded-2xl px-3 py-2 text-sm" style={mine ? { background: 'linear-gradient(135deg,#dc2626,#f97316)', color: '#fff' } : { background: 'var(--bg-card)', border: '1px solid var(--border)' }}>{message.message}</div></div>;
+            })}
+          </div>
+          <form onSubmit={handleSend} className="border-t p-3" style={{ borderColor: 'var(--border)' }}>
+            <div className="flex items-center gap-2">
+              <input value={draft} onChange={(event) => setDraft(event.target.value)} placeholder="Type your message..." className="flex-1 rounded-2xl px-4 py-3 text-sm outline-none" style={{ background: 'var(--bg-card-inner)', border: '1px solid var(--border)', color: 'var(--text-primary)' }} />
+              <button type="submit" disabled={!draft.trim() || sending} className="flex h-11 w-11 items-center justify-center rounded-2xl text-white disabled:opacity-60" style={{ background: 'linear-gradient(135deg,#dc2626,#f97316)' }}>{sending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </motion.div>
+  );
 };
 
-/* ── Profile dropdown ────────────────────────────────── */
-const ProfileDropdown = ({ user, logout, onClose }) => {
-    const dashPath = user?.role === 'admin' ? '/admin-dashboard' : '/dashboard';
-    const menuItems = [
-        { icon: User, label: 'Profile', to: '/dashboard?tab=settings' },
-        { icon: LayoutDashboard, label: 'My Orders', to: dashPath },
-        { icon: MessageSquare, label: 'Messages', to: '/dashboard?tab=chat' },
-    ];
-
-    return (
-        <motion.div
-            initial={{ opacity: 0, y: 8, scale: 0.96 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: 8, scale: 0.96 }}
-            transition={{ duration: 0.18, ease: 'easeOut' }}
-            className="absolute right-0 top-full mt-2 w-60 rounded-2xl overflow-hidden z-50 shadow-2xl"
-            style={{ backgroundColor: 'var(--bg-card)', border: '1px solid var(--border-strong)' }}>
-
-            {/* User info */}
-            <div className="px-5 py-4 border-b" style={{ borderColor: 'var(--border)' }}>
-                <div className="flex items-center gap-3">
-                    <Avatar user={user} size={10} />
-                    <div className="min-w-0">
-                        <div className="text-sm font-bold text-slate-900 dark:text-white truncate">{user?.name}</div>
-                        <div className="text-xs text-slate-500 dark:text-slate-400 truncate">{user?.email}</div>
-                    </div>
-                </div>
-            </div>
-
-            {/* Menu items */}
-            <div className="py-2 px-2">
-                {menuItems.map(({ icon: Icon, label, to }) => (
-                    <Link key={label} to={to} onClick={onClose}
-                        className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-slate-700 dark:text-slate-300 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/5 transition-all">
-                        <Icon className="w-4 h-4" strokeWidth={2} />
-                        {label}
-                    </Link>
-                ))}
-            </div>
-
-            {/* Logout */}
-            <div className="px-2 pb-2 border-t pt-2" style={{ borderColor: 'var(--border)' }}>
-                <button onClick={() => { logout(); onClose(); }}
-                    className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 transition-all">
-                    <LogOut className="w-4 h-4" strokeWidth={2} />
-                    Sign Out
-                </button>
-            </div>
-        </motion.div>
-    );
-};
-
-/* ── Cart Button ─────────────────────────────────────── */
-const CartButton = ({ count, onClick }) => (
-    <button onClick={onClick}
-        className="relative p-2 rounded-full text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-white/5 transition-all"
-        aria-label="Shopping cart">
-        <ShoppingCart size={19} />
-        {count > 0 && (
-            <motion.span
-                initial={{ scale: 0 }} animate={{ scale: 1 }}
-                className="absolute -top-0.5 -right-0.5 w-4 h-4 rounded-full text-[10px] font-black text-white flex items-center justify-center"
-                style={{ background: '#dc2626' }}>
-                {count > 9 ? '9+' : count}
-            </motion.span>
-        )}
-    </button>
+const CartButton = ({ count, openCart }) => (
+  <button onClick={openCart} className="relative p-2 hover:bg-gray-100 dark:hover:bg-white/5 rounded-xl">
+    <ShoppingCart size={18} />
+    {count > 0 ? <span className="absolute -top-1 -right-1 bg-red-600 text-white text-xs rounded-full min-w-4 h-4 px-1 flex items-center justify-center">{count > 9 ? "9+" : count}</span> : null}
+  </button>
 );
 
-/* ── Navbar ──────────────────────────────────────────── */
 const Navbar = ({ onOpenLogin }) => {
-    const { logout } = useContext(AuthContext);
-    const user = useSelector((state) => state.auth.user);
-    const { theme, toggleTheme } = useContext(ThemeContext);
-    const { cartBadge, openCart } = useContext(OrderContext);
-    const [isOpen, setIsOpen] = useState(false);
-    const [scrolled, setScrolled] = useState(false);
-    const [dropOpen, setDropOpen] = useState(false);
-    const dropRef = useRef(null);
-    const location = useLocation();
+  const { user, logout } = useContext(AuthContext);
+  const { theme, toggleTheme } = useContext(ThemeContext);
+  const { cartBadge, openCart } = useContext(OrderContext);
+  const location = useLocation();
+  const [mobile, setMobile] = useState(false);
+  const [profileOpen, setProfileOpen] = useState(false);
+  const [messageOpen, setMessageOpen] = useState(false);
+  const [showLogout, setShowLogout] = useState(false);
+  const [unreadMessages, setUnreadMessages] = useState(0);
+  const profileRef = useRef();
+  const messageRef = useRef();
 
-    useEffect(() => {
-        const onScroll = () => setScrolled(window.scrollY > 16);
-        window.addEventListener('scroll', onScroll);
-        return () => window.removeEventListener('scroll', onScroll);
-    }, []);
+  useEffect(() => {
+    const close = (e) => {
+      if (profileRef.current && !profileRef.current.contains(e.target)) setProfileOpen(false);
+      if (messageRef.current && !messageRef.current.contains(e.target)) setMessageOpen(false);
+    };
+    document.addEventListener("mousedown", close);
+    return () => document.removeEventListener("mousedown", close);
+  }, []);
 
-    useEffect(() => { setIsOpen(false); setDropOpen(false); }, [location.pathname]);
+  useEffect(() => {
+    if (!user) {
+      setUnreadMessages(0);
+      return undefined;
+    }
 
-    useEffect(() => {
-        const handler = (e) => { if (dropRef.current && !dropRef.current.contains(e.target)) setDropOpen(false); };
-        document.addEventListener('mousedown', handler);
-        return () => document.removeEventListener('mousedown', handler);
-    }, []);
+    const loadUnread = async () => {
+      try {
+        const { data } = await apiClient.get('/messages/threads');
+        setUnreadMessages(data.reduce((sum, thread) => sum + (thread.unreadCount || 0), 0));
+      } catch {
+        // ignore navbar fetch failures
+      }
+    };
 
-    const active = (p) => location.pathname === p;
+    loadUnread();
+  }, [user, location.pathname, messageOpen]);
 
-    return (
-        <nav className={`fixed w-full z-50 transition-all duration-300 ${scrolled
-            ? 'py-3 shadow-sm backdrop-blur-xl border-b'
-            : 'py-4 bg-transparent'
-            }`}
-            style={scrolled ? { backgroundColor: 'rgba(var(--bg-card-rgb,255,255,255),0.92)', borderColor: 'var(--border)' } : {}}>
+  const active = (path) => location.pathname === path;
 
-            <style>{`
-        .navbar-glass { background: rgba(255,255,255,0.92); }
-        .dark .navbar-glass { background: rgba(5,9,20,0.92); }
-      `}</style>
+  return (
+    <>
+      <nav className="fixed top-0 w-full z-50 border-b" style={{ background: 'var(--bg-card)', borderColor: 'var(--border)' }}>
+        <div className="max-w-7xl mx-auto px-6 flex items-center justify-between h-16">
+          <Link to="/"><Logo /></Link>
 
-            <div className={`w-full ${scrolled ? 'navbar-glass' : ''}`} style={{ position: 'absolute', inset: 0, zIndex: -1, ...(!scrolled ? { background: 'transparent' } : {}) }} />
+          <div className="hidden md:flex gap-6">
+            {navLinks.map((link) => (
+              <Link key={link.name} to={link.path} className={`text-sm ${active(link.path) ? 'text-red-600' : 'hover:text-black dark:hover:text-white'}`} style={!active(link.path) ? { color: 'var(--text-secondary)' } : {}}>{link.name}</Link>
+            ))}
+          </div>
 
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                <div className="flex justify-between items-center">
+          <div className="flex items-center gap-2">
+            <button onClick={toggleTheme} className="p-2 rounded-xl hover:bg-black/5 dark:hover:bg-white/5">{theme === "dark" ? <Sun size={18} /> : <Moon size={18} />}</button>
+            {user ? <CartButton count={cartBadge} openCart={openCart} /> : null}
+            {user ? (
+              <div ref={messageRef} className="relative">
+                <button type="button" onClick={() => { window.scrollTo({ top: 0, behavior: 'smooth' }); setMessageOpen((value) => !value); setProfileOpen(false); }} className="relative p-2 hover:bg-gray-100 dark:hover:bg-white/5 rounded-xl" aria-label="Messages">
+                  <MessageSquare size={18} />
+                  {unreadMessages ? <span className="absolute -top-1 -right-1 bg-red-600 text-white text-xs rounded-full min-w-4 h-4 px-1 flex items-center justify-center">{unreadMessages > 9 ? '9+' : unreadMessages}</span> : null}
+                </button>
+                <AnimatePresence>{messageOpen ? <MessagesDropdown user={user} onClose={() => setMessageOpen(false)} /> : null}</AnimatePresence>
+              </div>
+            ) : null}
 
-                    {/* Logo */}
-                    <Link to="/" className="flex items-center gap-2.5 group flex-shrink-0">
-                        <Logo />
-                    </Link>
+            {user ? (
+              <div ref={profileRef} className="relative">
+                <button onClick={() => { setProfileOpen((value) => !value); setMessageOpen(false); }} className="flex items-center gap-2">
+                  <Avatar user={user} />
+                  <ChevronDown size={14} />
+                </button>
+                <AnimatePresence>{profileOpen ? <ProfileDropdown user={user} close={() => setProfileOpen(false)} onRequestLogout={() => setShowLogout(true)} /> : null}</AnimatePresence>
+              </div>
+            ) : (
+              <div className="hidden md:flex gap-4 items-center">
+                <button onClick={() => onOpenLogin("login")}>Login</button>
+                <button onClick={() => onOpenLogin("register")} className="primary-btn px-3 py-2 rounded-xl font-bold text-base flex items-center justify-center gap-2 group">Order Now</button>
+              </div>
+            )}
 
-                    {/* Desktop Nav */}
-                    <div className="hidden md:flex items-center gap-1 flex-1 justify-center px-8">
-                        {navLinks.map((link) => (
-                            <Link key={link.name} to={link.path}
-                                className={`relative px-4 py-2 rounded-full text-sm font-medium transition-all duration-200 ${active(link.path)
-                                    ? 'text-red-600 dark:text-red-400'
-                                    : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
-                                    }`}>
-                                {active(link.path) && (
-                                    <motion.span layoutId="nav-pill"
-                                        className="absolute inset-0 rounded-full bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/20"
-                                        transition={{ type: 'spring', bounce: 0.25, duration: 0.35 }} />
-                                )}
-                                <span className="relative z-10">{link.name}</span>
-                            </Link>
-                        ))}
-                    </div>
+            <button className="md:hidden" onClick={() => setMobile(!mobile)}>{mobile ? <X size={22} /> : <Menu size={22} />}</button>
+          </div>
+        </div>
 
-                    {/* Right controls */}
-                    <div className="flex items-center gap-2 flex-shrink-0">
-
-                        {/* Theme toggle */}
-                        <button onClick={toggleTheme} aria-label="Toggle Theme"
-                            className="p-2 rounded-full text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-white/5 transition-all hidden sm:block">
-                            <AnimatePresence mode="wait">
-                                <motion.div key={theme}
-                                    initial={{ rotate: -90, opacity: 0 }} animate={{ rotate: 0, opacity: 1 }}
-                                    exit={{ rotate: 90, opacity: 0 }} transition={{ duration: 0.2 }}>
-                                    {theme === 'dark' ? <Sun size={17} /> : <Moon size={17} />}
-                                </motion.div>
-                            </AnimatePresence>
-                        </button>
-
-                        {/* Cart icon — always visible when logged in */}
-                        {user && <CartButton count={cartBadge} onClick={openCart} />}
-
-                        {/* --- Logged in: Avatar Dropdown --- */}
-                        {user ? (
-                            <div className="hidden md:block relative" ref={dropRef}>
-                                <button onClick={() => setDropOpen(!dropOpen)}
-                                    className="flex items-center gap-2 pl-1 pr-3 py-1 rounded-full transition-all hover:bg-gray-100 dark:hover:bg-white/5 border"
-                                    style={{ borderColor: 'var(--border)' }}>
-                                    <Avatar user={user} size={8} />
-                                    <span className="text-sm font-semibold text-slate-700 dark:text-slate-300 max-w-[100px] truncate">
-                                        {user.name?.split(' ')[0]}
-                                    </span>
-                                    <ChevronDown className={`w-3.5 h-3.5 text-slate-500 transition-transform duration-200 ${dropOpen ? 'rotate-180' : ''}`} />
-                                </button>
-                                <AnimatePresence>
-                                    {dropOpen && <ProfileDropdown user={user} logout={logout} onClose={() => setDropOpen(false)} />}
-                                </AnimatePresence>
-                            </div>
-                        ) : (
-                            /* --- Logged out: Login + CTA --- */
-                            <div className="hidden md:flex items-center gap-2">
-                                <button
-                                    onClick={() => onOpenLogin('login')}
-                                    className="text-sm font-medium text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors px-3 py-2">
-                                    Login
-                                </button>
-                                <button
-                                    onClick={() => onOpenLogin('register')}
-                                    className="primary-btn px-5 py-2.5 rounded-xl text-sm font-bold flex items-center gap-1.5">
-                                    Order Now <ArrowRight size={13} />
-                                </button>
-                            </div>
-                        )}
-
-                        {/* Hamburger */}
-                        <button className="md:hidden p-2 text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-white/5 rounded-lg transition-colors"
-                            onClick={() => setIsOpen(!isOpen)}>
-                            <AnimatePresence mode="wait">
-                                <motion.div key={isOpen ? 'x' : 'm'}
-                                    initial={{ rotate: -90, opacity: 0 }} animate={{ rotate: 0, opacity: 1 }}
-                                    exit={{ rotate: 90, opacity: 0 }} transition={{ duration: 0.15 }}>
-                                    {isOpen ? <X size={22} /> : <Menu size={22} />}
-                                </motion.div>
-                            </AnimatePresence>
-                        </button>
-                    </div>
+        <AnimatePresence>
+          {mobile ? (
+            <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} className="md:hidden px-6 pb-4 space-y-3" style={{ background: 'var(--bg-card)', borderTop: '1px solid var(--border)' }}>
+              {navLinks.map((link) => <Link key={link.name} to={link.path} onClick={() => setMobile(false)} className="block py-2" style={{ color: 'var(--text-secondary)' }}>{link.name}</Link>)}
+              {!user ? (
+                <div className="flex gap-3 pt-2">
+                  <button onClick={() => { setMobile(false); onOpenLogin('login'); }} className="flex-1 py-2 rounded-xl" style={{ background: 'var(--bg-card-inner)', border: '1px solid var(--border)' }}>Login</button>
+                  <button onClick={() => { setMobile(false); onOpenLogin('register'); }} className="flex-1 py-2 rounded-xl font-bold text-white" style={{ background: 'linear-gradient(135deg, #dc2626, #f97316)' }}>Order Now</button>
                 </div>
-            </div>
+              ) : null}
+            </motion.div>
+          ) : null}
+        </AnimatePresence>
+      </nav>
 
-            {/* Mobile menu */}
-            <AnimatePresence>
-                {isOpen && (
-                    <motion.div
-                        initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }}
-                        exit={{ opacity: 0, height: 0 }} transition={{ duration: 0.22, ease: 'easeInOut' }}
-                        className="md:hidden overflow-hidden border-t"
-                        style={{ borderColor: 'var(--border)', backgroundColor: 'var(--bg-card)' }}>
-                        <div className="px-4 pt-4 pb-6 space-y-1">
-
-                            {/* Mobile user info */}
-                            {user && (
-                                <div className="flex items-center gap-3 px-4 py-3 mb-2 rounded-xl"
-                                    style={{ backgroundColor: 'var(--bg-card-inner)', border: '1px solid var(--border)' }}>
-                                    <Avatar user={user} size={10} />
-                                    <div className="min-w-0">
-                                        <div className="text-sm font-bold text-slate-900 dark:text-white truncate">{user.name}</div>
-                                        <div className="text-xs text-slate-500 truncate">{user.email}</div>
-                                    </div>
-                                </div>
-                            )}
-
-                            {navLinks.map((link) => (
-                                <Link key={link.name} to={link.path}
-                                    className={`flex items-center justify-between px-4 py-3 rounded-xl text-sm font-medium transition-all ${active(link.path)
-                                        ? 'text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-500/5 border border-red-200 dark:border-red-500/15'
-                                        : 'text-slate-700 dark:text-slate-300 hover:bg-gray-50 dark:hover:bg-white/5'
-                                        }`}>
-                                    {link.name}
-                                    {active(link.path) && <ChevronRight size={14} />}
-                                </Link>
-                            ))}
-
-                            <div className="h-px my-2" style={{ background: 'var(--border)' }} />
-
-                            <button onClick={toggleTheme}
-                                className="w-full flex items-center justify-between px-4 py-3 rounded-xl text-sm font-medium text-slate-700 dark:text-slate-300 hover:bg-gray-50 dark:hover:bg-white/5">
-                                <span>{theme === 'dark' ? 'Switch to Light Mode' : 'Switch to Dark Mode'}</span>
-                                {theme === 'dark' ? <Sun size={16} /> : <Moon size={16} />}
-                            </button>
-
-                            {user ? (
-                                <>
-                                    <button onClick={openCart}
-                                        className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-slate-700 dark:text-slate-300 hover:bg-gray-50 dark:hover:bg-white/5">
-                                        <ShoppingCart className="w-4 h-4" /> My Cart {cartBadge > 0 && <span className="ml-auto text-xs font-black text-white bg-red-600 rounded-full w-5 h-5 flex items-center justify-center">{cartBadge}</span>}
-                                    </button>
-                                    <Link to={user.role === 'admin' ? '/admin-dashboard' : '/dashboard'}
-                                        className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-slate-700 dark:text-slate-300 hover:bg-gray-50 dark:hover:bg-white/5">
-                                        <LayoutDashboard className="w-4 h-4" /> My Orders
-                                    </Link>
-                                    <Link to="/dashboard?tab=chat"
-                                        className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-slate-700 dark:text-slate-300 hover:bg-gray-50 dark:hover:bg-white/5">
-                                        <MessageSquare className="w-4 h-4" /> Messages
-                                    </Link>
-                                    <button onClick={logout}
-                                        className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10">
-                                        <LogOut className="w-4 h-4" /> Sign Out
-                                    </button>
-                                </>
-                            ) : (
-                                <div className="flex flex-col gap-2 pt-2">
-                                    <button onClick={() => onOpenLogin('login')}
-                                        className="w-full text-center py-3 rounded-xl text-sm font-medium text-slate-700 dark:text-slate-300 border"
-                                        style={{ borderColor: 'var(--border-strong)' }}>
-                                        Sign In
-                                    </button>
-                                    <button onClick={() => onOpenLogin('register')}
-                                        className="w-full text-center primary-btn py-3 rounded-xl text-sm font-bold">
-                                        Order Now 🚀
-                                    </button>
-                                </div>
-                            )}
-                        </div>
-                    </motion.div>
-                )}
-            </AnimatePresence>
-        </nav>
-    );
+      <LogoutModal isOpen={showLogout} onClose={() => setShowLogout(false)} onConfirm={() => { logout(); setShowLogout(false); }} />
+    </>
+  );
 };
 
 export default Navbar;

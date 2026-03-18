@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const DEFAULT_API_BASE_URL = 'https://makeasite-backend.onrender.com';
+const DEFAULT_API_BASE_URL = import.meta.env.DEV ? 'http://localhost:5000' : '';
 
 export const API_BASE_URL =
   (import.meta.env.VITE_API_BASE_URL && import.meta.env.VITE_API_BASE_URL.trim()) ||

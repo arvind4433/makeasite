@@ -97,15 +97,7 @@ const Portfolio = () => (
                             <img src={p.image} alt={p.title}
                                 className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105 saturate-75 group-hover:saturate-100" />
 
-                            {/* Dark overlay on hover */}
-                            <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300"
-                                style={{ background: 'rgba(0,0,0,0.55)', backdropFilter: 'blur(2px)' }}>
-                                <a href={p.link}
-                                    className="flex items-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm text-white border border-white/30 hover:bg-white/10 transition-colors">
-                                    View Example <ExternalLink className="w-4 h-4" />
-                                </a>
-                            </div>
-
+                          
                             {/* Type badge */}
                             <div className="absolute top-3 left-3">
                                 <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold text-white bg-gradient-to-r ${p.color} shadow-md`}>

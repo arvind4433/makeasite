@@ -1,14 +1,5 @@
 import { createContext, useState, useContext, useCallback } from 'react';
 
-/**
- * OrderContext
- * 
- * Manages:
- *  - pendingPlan: the plan the user clicked before login (null | 'basic' | 'standard' | 'premium' | 'custom')
- *  - orderModalOpen: whether the order form modal is open
- *  - cartOpen: whether the cart drawer is open
- *  - cartItems: orders fetched from the server (refreshed after creation)
- */
 export const OrderContext = createContext();
 
 export const OrderProvider = ({ children }) => {
@@ -19,13 +10,14 @@ export const OrderProvider = ({ children }) => {
     const [cartBadge, setCartBadge] = useState(0);
 
     const openOrderModal = useCallback((plan) => {
-        setPendingPlan(plan);
+        if (typeof plan !== 'undefined') {
+            setPendingPlan(plan);
+        }
         setOrderModalOpen(true);
     }, []);
 
     const closeOrderModal = useCallback(() => {
         setOrderModalOpen(false);
-        // Don't clear pendingPlan immediately — clear after modal animation
         setTimeout(() => setPendingPlan(null), 300);
     }, []);
 

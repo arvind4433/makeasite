@@ -32,7 +32,7 @@ const HowItWorks = () => (
             <div className="relative">
                 {/* Connector */}
                 <div className="hidden lg:block absolute top-10 left-[9.5%] right-[9.5%] h-px"
-                    style={{ background: 'linear-gradient(90deg, transparent, rgba(220,38,38,0.3), transparent)' }} />
+                    style={{ background: 'red' }} />
 
                 <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-8 lg:gap-4">
                     {steps.map((step, i) => (

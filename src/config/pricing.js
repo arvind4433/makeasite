@@ -1,179 +1,344 @@
-/**
- * pricing.js — Single source of truth for all pricing across the website.
- *
- * PricingSection.jsx  ──┐
- * CostCalculator.jsx  ──┴── all import from here
- *
- * NEVER hardcode prices in individual components.
- * Change a number here and it propagates everywhere automatically.
- */
-
-/* ══════════════════════════════════════════════════════
-   PACKAGE TIERS
-   ══════════════════════════════════════════════════════ */
-export const PACKAGES = {
-    basic: {
-        id: 'basic',
-        name: 'Basic Website',
-        price: 3_000,          // SAR, fixed
-        priceLabel: '3,000',
-        currency: 'SAR',
-        href: '/register?plan=basic',
-        pageRange: { min: 1, max: 4 },
-        tagline: 'Simple, clean, and professional — perfect for getting online fast.',
-        popular: false,
-        badge: null,
-        cta: 'Order Basic',
-        suitableFor: ['Small business websites', 'Simple portfolio websites', 'Landing pages'],
-        features: [
-            { text: '3–4 Pages Static Website', note: null },
-            { text: 'Fully Responsive Design (Mobile Friendly)', note: null },
-            { text: 'Modern UI Design', note: null },
-            { text: 'Contact Form', note: null },
-            { text: 'Basic SEO Setup', note: null },
-            { text: 'Fast Loading Website', note: null },
-            { text: 'Login System', note: 'Optional — can be added if required' },
-        ],
-    },
-
-    standard: {
-        id: 'standard',
-        name: 'Standard Website',
-        price: 9_000,         // SAR lower bound
-        priceMax: 10_000,        // SAR upper bound
-        priceLabel: '9,000 – 10,000',
-        currency: 'SAR',
-        href: '/register?plan=standard',
-        pageRange: { min: 5, max: 10 },
-        tagline: 'A complete website with modern functionality for growing businesses.',
-        popular: true,
-        badge: 'Most Popular',
-        cta: 'Order Standard',
-        suitableFor: ['Business websites', 'Service websites', 'Growing startups'],
-        features: [
-            { text: '7–10 Pages Website', note: null },
-            { text: 'Modern & Professional UI/UX', note: null },
-            { text: 'Fully Responsive Design', note: null },
-            { text: 'User Authentication (Login & Signup)', note: null },
-            { text: 'Contact Forms', note: null },
-            { text: 'Basic Database Integration', note: null },
-            { text: 'Payment Method Integration', note: 'Optional — included if required' },
-            { text: 'Smooth Animations & Interactivity', note: null },
-        ],
-    },
-
-    premium: {
-        id: 'premium',
-        name: 'Premium Website',
-        price: 40_000,         // SAR, fixed
-        priceLabel: '40,000',
-        currency: 'SAR',
-        href: '/register?plan=premium',
-        pageRange: { min: 11, max: 20 },
-        tagline: 'Advanced, fully-featured platform built for scale and performance.',
-        popular: false,
-        badge: 'Advanced',
-        cta: 'Order Premium',
-        suitableFor: ['Large business websites', 'Startup platforms', 'Advanced web applications'],
-        features: [
-            { text: '18–20 Pages Website', note: null },
-            { text: 'Fully Professional UI/UX Design', note: null },
-            { text: 'Advanced Interactive Features', note: null },
-            { text: 'User Authentication System', note: null },
-            { text: 'Full Database Integration', note: null },
-            { text: 'Payment System Integration', note: null },
-            { text: 'Advanced Animations & Modern Effects', note: null },
-            { text: 'High Performance Optimization', note: null },
-        ],
-    },
+export const PRICING_RULES = {
+  staticPageMin: 200,
+  staticPageMax: 250,
+  staticPageDefault: 250,
+  dynamicPageMin: 500,
+  dynamicPageDefault: 500,
+  auth: {
+    none: 0,
+    basic: 1000,
+    premium: 2000
+  },
+  paymentIntegration: 1200
 };
 
-export const PACKAGE_LIST = [PACKAGES.basic, PACKAGES.standard, PACKAGES.premium];
-
-/* ══════════════════════════════════════════════════════
-   ESTIMATOR — TIER-BASED BASE PRICE
-   Mirrors the package tiers exactly so the estimator
-   always agrees with the pricing cards.
-   ══════════════════════════════════════════════════════ */
-
-/**
- * Returns the package tier that covers `pages`.
- *  1–4  pages → Basic   (3,000 SAR)
- *  5–10 pages → Standard (9,000 SAR)
- * 11–20 pages → Premium (40,000 SAR)
- */
-export const getTier = (pages) => {
-    if (pages <= PACKAGES.basic.pageRange.max) return PACKAGES.basic;
-    if (pages <= PACKAGES.standard.pageRange.max) return PACKAGES.standard;
-    return PACKAGES.premium;
+export const EXTRA_FEATURES = {
+  adminPanel: { id: 'adminPanel', label: 'Admin Panel', price: 1800 },
+  cms: { id: 'cms', label: 'CMS / Blog', price: 1500 },
+  seo: { id: 'seo', label: 'SEO Setup', price: 800 },
+  animations: { id: 'animations', label: 'Animations / Effects', price: 2000 },
+  dashboard: { id: 'dashboard', label: 'User Dashboard', price: 6000 },
+  emails: { id: 'emails', label: 'Email Notifications', price: 700 },
+  chat: { id: 'chat', label: 'Live Chat', price: 2000 },
+  analytics: { id: 'analytics', label: 'Analytics Integration', price: 900 },
+  multilingual: { id: 'multilingual', label: 'Multi-language', price: 1500 },
+  darkMode: { id: 'darkMode', label: 'Dark Mode', price: 600 },
+  premiumUi: { id: 'premiumUi', label: 'Premium UI System', price: 4300 },
+  enterpriseIntegrations: { id: 'enterpriseIntegrations', label: 'Enterprise Integrations', price: 11800 }
 };
 
-export const getBasePrice = (pages) => getTier(pages).price;
-
-/* ══════════════════════════════════════════════════════
-   ESTIMATOR ADD-ONS (SAR)
-   These stack on top of the tier base price.
-   ══════════════════════════════════════════════════════ */
-export const ADDONS = [
-    {
-        key: 'loginSystem',
-        label: 'User Login System',
-        price: 1_500,
-        desc: 'User registration, login, JWT sessions',
-        note: 'Included free in Standard & Premium',
-        // In Standard/Premium this is already in the package price — the
-        // estimator notes this to the user but still adds it if selected
-        // from Basic tier so the total remains correct.
-    },
-    {
-        key: 'userPortal',
-        label: 'User Dashboard / Portal',
-        price: 3_500,
-        desc: 'Client-facing dashboard: orders, profile, history',
-        note: null,
-    },
-    {
-        key: 'paymentGateway',
-        label: 'Payment Gateway',
-        price: 2_000,
-        desc: 'Stripe or local gateway integration',
-        note: 'Optional in Standard, included in Premium',
-    },
-    {
-        key: 'blogSystem',
-        label: 'Blog / CMS System',
-        price: 2_500,
-        desc: 'Full content management with rich editor',
-        note: null,
-    },
-    {
-        key: 'seoOptimization',
-        label: 'Advanced SEO',
-        price: 2_000,
-        desc: 'Structured data, sitemap, on-page optimisation',
-        note: null,
-    },
-    {
-        key: 'customDesign',
-        label: 'Custom UI Design Pack',
-        price: 3_000,
-        desc: 'Bespoke illustrations, icons & brand system',
-        note: null,
-    },
+export const AUTH_OPTIONS = [
+  { id: 'none', label: 'No Login System' },
+  { id: 'basic', label: 'Basic Login System' },
+  { id: 'premium', label: 'Premium Auth System' }
 ];
 
-/* ══════════════════════════════════════════════════════
-   DELIVERY SPEED SURCHARGES (SAR)
-   ══════════════════════════════════════════════════════ */
-export const SPEEDS = [
-    { value: 'standard', label: 'Standard', tagLabel: 'Included', extra: 0 },
-    { value: 'fast', label: '2× Faster', tagLabel: '+1,500 SAR', extra: 1_500 },
-    { value: 'urgent', label: '3× Urgent', tagLabel: '+3,000 SAR', extra: 3_000 },
+export const SITE_KIND_OPTIONS = [
+  { id: 'static', label: 'Static Website' },
+  { id: 'dynamic', label: 'Dynamic Website' }
 ];
 
-/* ══════════════════════════════════════════════════════
-   HELPERS
-   ══════════════════════════════════════════════════════ */
-/** Locale-formatted number, e.g.  9000 → "9,000" */
-export const fmt = (n) => n.toLocaleString('en-US');
+export const WEBSITE_TYPES = [
+  'Business Website',
+  'Portfolio',
+  'E-commerce',
+  'Landing Page',
+  'SaaS Platform',
+  'Blog / News',
+  'Educational',
+  'Custom'
+];
 
+export const DESIGN_STYLES = [
+  'Modern & Minimal',
+  'Bold & Colorful',
+  'Corporate & Professional',
+  'Creative & Artistic',
+  'Dark / Neon',
+  'Elegant & Luxury'
+];
+
+export const FEATURE_OPTIONS = [
+  EXTRA_FEATURES.adminPanel,
+  EXTRA_FEATURES.cms,
+  EXTRA_FEATURES.seo,
+  EXTRA_FEATURES.animations,
+  EXTRA_FEATURES.dashboard,
+  EXTRA_FEATURES.emails,
+  EXTRA_FEATURES.chat,
+  EXTRA_FEATURES.analytics,
+  EXTRA_FEATURES.multilingual,
+  EXTRA_FEATURES.darkMode
+];
+
+export const DELIVERY_OPTIONS = [
+  { value: 'normal', label: 'Standard', extra: 0 },
+  { value: 'fast', label: '2x Faster', extra: 1500 },
+  { value: 'urgent', label: '3x Urgent', extra: 3000 }
+];
+
+export const PLAN_PRESETS = {
+  static: {
+    presetId: 'static',
+    packageType: 'basic',
+    planName: 'Static Website',
+    siteKind: 'static',
+    pages: 8,
+    authTier: 'none',
+    paymentIntegration: false,
+    featureIds: ['seo']
+  },
+  dynamic: {
+    presetId: 'dynamic',
+    packageType: 'standard',
+    planName: 'Dynamic Website',
+    siteKind: 'dynamic',
+    pages: 10,
+    authTier: 'basic',
+    paymentIntegration: false,
+    featureIds: []
+  },
+  advanced: {
+    presetId: 'advanced',
+    packageType: 'premium',
+    planName: 'Advanced Website',
+    siteKind: 'dynamic',
+    pages: 12,
+    authTier: 'premium',
+    paymentIntegration: true,
+    featureIds: ['animations']
+  },
+  premium: {
+    presetId: 'premium',
+    packageType: 'premium',
+    planName: 'Premium Website',
+    siteKind: 'dynamic',
+    pages: 15,
+    authTier: 'premium',
+    paymentIntegration: true,
+    featureIds: ['animations', 'premiumUi']
+  },
+  enterprise: {
+    presetId: 'enterprise',
+    packageType: 'custom',
+    planName: 'Enterprise Website',
+    siteKind: 'dynamic',
+    pages: 40,
+    authTier: 'premium',
+    paymentIntegration: true,
+    featureIds: ['animations', 'premiumUi', 'enterpriseIntegrations']
+  },
+  dashboardSimple: {
+    presetId: 'dashboardSimple',
+    packageType: 'custom',
+    planName: 'Simple Dashboard',
+    siteKind: 'dynamic',
+    pages: 26,
+    authTier: 'basic',
+    paymentIntegration: false,
+    featureIds: ['dashboard', 'analytics']
+  },
+  dashboardMedium: {
+    presetId: 'dashboardMedium',
+    packageType: 'custom',
+    planName: 'Medium Dashboard',
+    siteKind: 'dynamic',
+    pages: 61,
+    authTier: 'premium',
+    paymentIntegration: false,
+    featureIds: ['dashboard', 'analytics', 'emails', 'chat']
+  },
+  dashboardPremium: {
+    presetId: 'dashboardPremium',
+    packageType: 'custom',
+    planName: 'Premium Dashboard',
+    siteKind: 'dynamic',
+    pages: 176,
+    authTier: 'premium',
+    paymentIntegration: true,
+    featureIds: ['dashboard', 'analytics', 'emails', 'chat', 'premiumUi', 'enterpriseIntegrations']
+  }
+};
+
+export const formatInr = (value) => `INR ${Number(value || 0).toLocaleString('en-IN')}`;
+
+export const featureById = (id) => EXTRA_FEATURES[id];
+
+export const calculateProjectPricing = ({
+  siteKind = 'static',
+  pages = 1,
+  authTier = 'none',
+  paymentIntegration = false,
+  featureIds = [],
+  deliveryOption = 'normal'
+}) => {
+  const normalizedPages = Math.max(1, Number(pages) || 1);
+  const pageRate = siteKind === 'dynamic' ? PRICING_RULES.dynamicPageDefault : PRICING_RULES.staticPageDefault;
+  const pagesCost = normalizedPages * pageRate;
+  const authCost = PRICING_RULES.auth[authTier] ?? 0;
+  const paymentCost = paymentIntegration ? PRICING_RULES.paymentIntegration : 0;
+  const featuresCost = featureIds.reduce((sum, id) => sum + (featureById(id)?.price || 0), 0);
+  const deliveryCost = DELIVERY_OPTIONS.find((item) => item.value === deliveryOption)?.extra || 0;
+
+  const breakdown = [
+    { key: 'pages', label: `${normalizedPages} ${siteKind} page${normalizedPages === 1 ? '' : 's'}`, amount: pagesCost },
+    ...(authCost ? [{ key: 'auth', label: authTier === 'premium' ? 'Premium Auth System' : 'Basic Login System', amount: authCost }] : []),
+    ...(paymentCost ? [{ key: 'payment', label: 'Payment Integration', amount: paymentCost }] : []),
+    ...featureIds
+      .map((id) => featureById(id))
+      .filter(Boolean)
+      .map((feature) => ({ key: feature.id, label: feature.label, amount: feature.price })),
+    ...(deliveryCost ? [{ key: 'delivery', label: `Delivery Upgrade (${deliveryOption})`, amount: deliveryCost }] : [])
+  ];
+
+  const total = breakdown.reduce((sum, item) => sum + item.amount, 0);
+
+  return {
+    pageRate,
+    total,
+    breakdown,
+    selectedFeatures: featureIds.map((id) => featureById(id)).filter(Boolean)
+  };
+};
+
+export const WEBSITE_PLANS = [
+  {
+    id: 'static',
+    title: 'Static Website',
+    subtitle: '7-8 pages, no login system',
+    preset: PLAN_PRESETS.static,
+    features: ['7-8 pages', 'Responsive design', 'Contact form', 'Basic SEO setup']
+  },
+  {
+    id: 'dynamic',
+    title: 'Dynamic Website',
+    subtitle: 'Database + login system',
+    preset: PLAN_PRESETS.dynamic,
+    features: ['Database-ready pages', 'Basic login system', 'API-driven content', 'Scalable structure'],
+    rangeLabel: 'INR 5,000 - 10,000',
+    popular: true
+  },
+  {
+    id: 'advanced',
+    title: 'Advanced Website',
+    subtitle: 'Animations, integrations, advanced UI',
+    preset: PLAN_PRESETS.advanced,
+    features: ['Premium auth flow', 'Payment integration', 'Motion effects', 'Advanced interactions']
+  },
+  {
+    id: 'premium',
+    title: 'Premium Website',
+    subtitle: 'High-quality design and advanced features',
+    preset: PLAN_PRESETS.premium,
+    features: ['Premium UI system', 'Branded interactions', 'Higher polish', 'Feature-rich build']
+  },
+  {
+    id: 'enterprise',
+    title: 'Enterprise Website',
+    subtitle: 'Complex system or large projects',
+    preset: PLAN_PRESETS.enterprise,
+    features: ['Large scope', 'Advanced integrations', 'Complex workflows', 'Enterprise planning']
+  }
+].map((plan) => ({
+  ...plan,
+  price: calculateProjectPricing(plan.preset).total
+}));
+
+export const DASHBOARD_PLANS = [
+  {
+    id: 'dashboardSimple',
+    title: 'Simple Dashboard',
+    preset: PLAN_PRESETS.dashboardSimple,
+    features: ['Core dashboard pages', 'Secure user login', 'Analytics widgets', 'Structured reporting views']
+  },
+  {
+    id: 'dashboardMedium',
+    title: 'Medium Dashboard',
+    preset: PLAN_PRESETS.dashboardMedium,
+    features: ['Team workflows', 'Analytics + alerts', 'Messaging-ready modules', 'Scalable dashboard architecture']
+  },
+  {
+    id: 'dashboardPremium',
+    title: 'Premium Dashboard',
+    preset: PLAN_PRESETS.dashboardPremium,
+    features: ['Premium UI system', 'Realtime-ready experience', 'Enterprise integrations', 'Large-scale product scope']
+  }
+].map((plan) => ({
+  ...plan,
+  price: calculateProjectPricing(plan.preset).total
+}));
+
+export const PRICING_SLIDER_CARDS = [
+  {
+    id: 'static',
+    title: 'Static Website',
+    subtitle: '7-8 pages, no login system',
+    preset: PLAN_PRESETS.static,
+    section: 'Website',
+    features: ['7-8 pages', 'Responsive design', 'Contact form', 'Basic SEO setup']
+  },
+  {
+    id: 'dynamic',
+    title: 'Dynamic Website',
+    subtitle: 'Database + login system',
+    preset: PLAN_PRESETS.dynamic,
+    section: 'Website',
+    features: ['Database-ready pages', 'Basic login system', 'API-driven content', 'Scalable structure'],
+    rangeLabel: 'INR 5,000 - 10,000',
+    popular: true
+  },
+  {
+    id: 'advanced',
+    title: 'Advanced Website',
+    subtitle: 'Animations, integrations, advanced UI',
+    preset: PLAN_PRESETS.advanced,
+    section: 'Website',
+    features: ['Premium auth flow', 'Payment integration', 'Motion effects', 'Advanced interactions']
+  },
+  {
+    id: 'dashboardSimple',
+    title: 'Simple Dashboard',
+    subtitle: 'Clean internal tools and user-facing dashboards',
+    preset: PLAN_PRESETS.dashboardSimple,
+    section: 'Dashboard Development',
+    features: ['Core dashboard pages', 'Secure user login', 'Analytics widgets', 'Structured reporting views']
+  },
+  {
+    id: 'dashboardMedium',
+    title: 'Medium Dashboard',
+    subtitle: 'Multi-module dashboards for growing products',
+    preset: PLAN_PRESETS.dashboardMedium,
+    section: 'Dashboard Development',
+    features: ['Team workflows', 'Analytics + alerts', 'Messaging-ready modules', 'Scalable dashboard architecture']
+  },
+  {
+    id: 'dashboardPremium',
+    title: 'Premium Dashboard',
+    subtitle: 'High-capability portals for larger systems',
+    preset: PLAN_PRESETS.dashboardPremium,
+    section: 'Dashboard Development',
+    features: ['Premium UI system', 'Realtime-ready experience', 'Enterprise integrations', 'Large-scale product scope']
+  }
+].map((plan) => ({
+  ...plan,
+  price: calculateProjectPricing(plan.preset).total
+}));
+
+export const createOrderDraftFromPreset = (preset) => {
+  const selectedPreset = typeof preset === 'string' ? PLAN_PRESETS[preset] : preset;
+  const resolvedPreset = selectedPreset || PLAN_PRESETS.static;
+  const pricing = calculateProjectPricing(resolvedPreset);
+
+  return {
+    presetId: resolvedPreset.presetId,
+    plan: resolvedPreset.packageType,
+    planName: resolvedPreset.planName,
+    siteKind: resolvedPreset.siteKind,
+    pages: resolvedPreset.pages,
+    authTier: resolvedPreset.authTier,
+    paymentIntegration: resolvedPreset.paymentIntegration,
+    featureIds: [...resolvedPreset.featureIds],
+    budget: pricing.total,
+    priceBreakdown: pricing.breakdown
+  };
+};

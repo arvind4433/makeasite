@@ -15,7 +15,7 @@ export default defineConfig(({ mode }) => {
     server: {
       proxy: {
         '/api': {
-          target: env.VITE_API_BASE_URL || 'https://makeasite-backend.onrender.com',
+          target: env.VITE_API_BASE_URL || 'http://localhost:5000',
           changeOrigin: true,
         },
       },

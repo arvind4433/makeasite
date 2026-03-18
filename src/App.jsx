@@ -6,11 +6,11 @@ import Home from './pages/Home';
 import ServicesPage from './pages/ServicesPage';
 import PortfolioPage from './pages/PortfolioPage';
 import ContactPage from './pages/ContactPage';
-import Login from './pages/Login';
-import Register from './pages/Register';
-import ForgotPassword from './pages/ForgotPassword';
-import ResetPassword from './pages/ResetPassword';
-import AuthCallback from './pages/AuthCallback';
+import LoginModal from './auth/Login';
+import RegisterModal from './auth/Register';
+import ForgotPasswordModal from './auth/ForgetPassword';
+import NewPasswordModal from './auth/NewPassword';
+import SocialAuth from "./pages/SocialAuth"
 import AboutPage from './pages/AboutPage';
 import PrivacyPolicy from './pages/PrivacyPolicy';
 import TermsPage from './pages/TermsPage';
@@ -18,7 +18,8 @@ import RefundPolicy from './pages/RefundPolicy';
 import Dashboard from './pages/Dashboard';
 import PricingPage from './pages/PricingPage';
 import AdminDashboard from './pages/AdminDashboard';
-import { AuthProvider } from './context/AuthContext';
+import OrderDetailsPage from './pages/OrderDetailsPage';
+import { AuthProvider, AuthContext } from './context/AuthContext';
 import { ThemeProvider } from './context/ThemeContext';
 import { LoadingProvider, useLoading } from './context/LoadingContext';
 import { OrderProvider, useOrder } from './context/OrderContext';
@@ -26,13 +27,12 @@ import PageLoader from './components/PageLoader';
 import CookieConsent from './components/CookieConsent';
 import OrderModal from './components/OrderModal';
 import CartDrawer from './components/CartDrawer';
-import LoginModal from './components/LoginModal';
+
 import { useEffect, useState, useContext } from 'react';
-import { AuthContext } from './context/AuthContext';
 
 /* ── Scroll to top on every route change ─────────────── */
 const ScrollToTop = () => {
-  const { pathname, hash } = useLocation();
+  const { pathname, hash, search } = useLocation();
   useEffect(() => {
     if (hash) {
       const el = document.getElementById(hash.replace('#', ''));
@@ -40,7 +40,7 @@ const ScrollToTop = () => {
     } else {
       window.scrollTo(0, 0);
     }
-  }, [pathname, hash]);
+  }, [pathname, hash, search]);
   return null;
 };
 
@@ -57,10 +57,14 @@ const AppInner = () => {
   const hideFooter = isAuthPath(location.pathname);
   const { openOrderModal } = useOrder();
 
-  // Login modal state
+  // Auth modal states
   const [loginModalOpen, setLoginModalOpen] = useState(false);
   const [loginContext, setLoginContext] = useState('general');
   const [loginInitialView, setLoginInitialView] = useState('login');
+  const [registerModalOpen, setRegisterModalOpen] = useState(false);
+  const [forgotPasswordOpen, setForgotPasswordOpen] = useState(false);
+  const [newPasswordOpen, setNewPasswordOpen] = useState(false);
+  const [forgotEmail, setForgotEmail] = useState('');
 
   // Handle plan-select → login → order flow from OAuth callback query param
   const [searchParams, setSearchParams] = useSearchParams();
@@ -80,7 +84,7 @@ const AppInner = () => {
       const view = e.detail?.view || 'login';
       if (user) {
         // User is already logged in — open order modal directly
-        if (ctx === 'plan') openOrderModal(null);
+        if (ctx === 'plan') openOrderModal();
       } else {
         setLoginContext(ctx);
         setLoginInitialView(view);
@@ -103,13 +107,40 @@ const AppInner = () => {
       <PageLoader visible={isLoading} />
       <ScrollToTop />
 
-      {/* Global Overlays — LoginModal conditionally mounted so every open is a fresh mount */}
+      {/* Global Auth Modals */}
       {loginModalOpen && (
         <LoginModal
           isOpen={loginModalOpen}
           onClose={() => setLoginModalOpen(false)}
           loginContext={loginContext}
           initialView={loginInitialView}
+          openRegister={() => { setLoginModalOpen(false); setRegisterModalOpen(true); }}
+          openForgotPassword={() => { setLoginModalOpen(false); setForgotPasswordOpen(true); }}
+        />
+      )}
+      {registerModalOpen && (
+        <RegisterModal
+          isOpen={registerModalOpen}
+          onClose={() => setRegisterModalOpen(false)}
+          openLogin={() => { setRegisterModalOpen(false); setLoginModalOpen(true); }}
+        />
+      )}
+      {forgotPasswordOpen && (
+        <ForgotPasswordModal
+          isOpen={forgotPasswordOpen}
+          onClose={() => setForgotPasswordOpen(false)}
+          onSuccess={(email) => {
+            setForgotEmail(email);
+            setForgotPasswordOpen(false);
+            setNewPasswordOpen(true);
+          }}
+        />
+      )}
+      {newPasswordOpen && (
+        <NewPasswordModal
+          isOpen={newPasswordOpen}
+          onClose={() => setNewPasswordOpen(false)}
+          email={forgotEmail}
         />
       )}
       <OrderModal />
@@ -128,11 +159,11 @@ const AppInner = () => {
             <Route path="/contact" element={<ContactPage />} />
 
             {/* Auth pages */}
-            <Route path="/login" element={<Login />} />
-            <Route path="/register" element={<Register />} />
-            <Route path="/forgot-password" element={<ForgotPassword />} />
-            <Route path="/reset-password/:token" element={<ResetPassword />} />
-            <Route path="/auth/callback" element={<AuthCallback />} />
+            <Route path="/login" element={<LoginModal isOpen={true} onClose={() => {}} openRegister={() => window.location.assign('/register')} openForgotPassword={() => window.location.assign('/forgot-password')} />} />
+            <Route path="/register" element={<RegisterModal isOpen={true} onClose={() => {}} openLogin={() => window.location.assign('/login')} />} />
+            <Route path="/forgot-password" element={<ForgotPasswordModal isOpen={true} onClose={() => window.location.assign('/login')} />} />
+            <Route path="/reset-password/:token" element={<NewPasswordModal isOpen={true} onClose={() => {}} />} />
+            <Route path="/social-auth" element={<SocialAuth />} />
 
             {/* Footer / legal pages */}
             <Route path="/about" element={<AboutPage />} />
@@ -142,6 +173,7 @@ const AppInner = () => {
 
             {/* Protected app pages */}
             <Route path="/dashboard" element={<Dashboard />} />
+            <Route path="/orders/:id" element={<OrderDetailsPage />} />
             <Route path="/admin-dashboard" element={<AdminDashboard />} />
           </Routes>
         </main>

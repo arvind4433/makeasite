@@ -1,539 +1,317 @@
-import { useState, useEffect, useContext, useRef } from 'react';
+import { useState, useEffect, useContext, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, CheckCircle, ChevronRight, Upload, AlertCircle, Loader2 } from 'lucide-react';
+import { X, CheckCircle, ChevronRight, AlertCircle, Loader2 } from 'lucide-react';
 import { AuthContext } from '../context/AuthContext';
 import { OrderContext } from '../context/OrderContext';
 import { toast } from 'sonner';
 import { useCreateOrderMutation } from '../services/orderApi.js';
-
-const PLAN_DEFAULTS = {
-    basic: { budget: 3000, pages: 3, label: 'Basic Website (3,000 SAR)' },
-    standard: { budget: 9000, pages: 7, label: 'Standard Website (9,000 SAR)' },
-    premium: { budget: 40000, pages: 18, label: 'Premium Website (40,000 SAR)' },
-    custom: { budget: 0, pages: 5, label: 'Custom Quote' },
-};
-
-const WEBSITE_TYPES = [
-    'Business Website', 'Portfolio', 'E-commerce', 'Landing Page',
-    'SaaS Platform', 'Blog / News', 'Educational', 'Custom',
-];
-
-const FEATURE_OPTIONS = [
-    'Login / Auth System', 'Payment Gateway', 'CMS / Blog', 'Admin Panel',
-    'SEO Setup', 'Animations / Effects', 'User Dashboard', 'Email Notifications',
-    'Live Chat', 'Analytics Integration', 'Multi-language', 'Dark Mode',
-];
-
-const DESIGN_STYLES = [
-    'Modern & Minimal', 'Bold & Colorful', 'Corporate & Professional',
-    'Creative & Artistic', 'Dark / Neon', 'Elegant & Luxury',
-];
+import {
+  AUTH_OPTIONS,
+  DELIVERY_OPTIONS,
+  DESIGN_STYLES,
+  FEATURE_OPTIONS,
+  WEBSITE_TYPES,
+  calculateProjectPricing,
+  createOrderDraftFromPreset,
+  formatInr
+} from '../config/pricing';
 
 const INITIAL_FORM = {
-    projectName: '',
-    websiteType: '',
-    pages: 3,
-    businessCategory: '',
-    features: [],
-    designStyle: '',
-    referenceWebsites: '',
-    description: '',
-    preferredDeadline: '',
-    contactEmail: '',
-    phoneNumber: '',
-    plan: 'basic',
-    budget: 3000,
-    deliveryOption: 'normal',
+  title: '',
+  description: '',
+  websiteType: '',
+  businessCategory: '',
+  designStyle: '',
+  referenceWebsites: '',
+  contactEmail: '',
+  phoneNumber: '',
+  preferredDeadline: '',
+  siteKind: 'static',
+  pages: 1,
+  authTier: 'none',
+  paymentIntegration: false,
+  featureIds: [],
+  deliveryOption: 'normal',
+  packageType: 'basic',
+  planName: 'Static Website',
+  presetId: 'static',
+  acceptedLegal: false
 };
 
-const fieldClasses = (err) =>
-    `w-full px-4 py-3 rounded-xl text-sm font-medium transition-all outline-none focus:ring-2 ${err
-        ? 'border-2 border-red-500 focus:ring-red-400/30 bg-red-50/5'
-        : 'focus:ring-red-500/20'
-    }`;
+const STEPS = ['Project', 'Features', 'Notes', 'Confirm'];
 
-const inputStyle = (err) => ({
-    background: 'var(--bg-card-inner)',
-    border: err ? '2px solid #ef4444' : '1px solid var(--border-strong)',
-    color: 'var(--text-primary)',
+const fieldClasses = (error) => `w-full rounded-xl px-4 py-3 text-sm outline-none ${error ? 'border-2 border-red-500' : 'border'}`;
+const inputStyle = (error) => ({
+  background: 'var(--bg-card-inner)',
+  borderColor: error ? '#ef4444' : 'var(--border)',
+  color: 'var(--text-primary)'
 });
 
-const STEPS = ['Project Info', 'Features', 'Description', 'Confirm'];
-
 const OrderModal = () => {
-    const { user } = useContext(AuthContext);
-    const { orderModalOpen, closeOrderModal, pendingPlan, addCartItem, openCart } = useContext(OrderContext);
-    const [createOrder] = useCreateOrderMutation();
+  const { user } = useContext(AuthContext);
+  const { orderModalOpen, closeOrderModal, pendingPlan, addCartItem, openCart } = useContext(OrderContext);
+  const [createOrder] = useCreateOrderMutation();
+  const [step, setStep] = useState(0);
+  const [errors, setErrors] = useState({});
+  const [submitting, setSubmitting] = useState(false);
+  const [done, setDone] = useState(false);
+  const [form, setForm] = useState(INITIAL_FORM);
 
-    const [step, setStep] = useState(0);
-    const [form, setForm] = useState(INITIAL_FORM);
-    const [errors, setErrors] = useState({});
-    const [submitting, setSubmitting] = useState(false);
-    const [done, setDone] = useState(false);
-    const fileRef = useRef(null);
-    const scrollRef = useRef(null);
+  useEffect(() => {
+    if (!orderModalOpen) return;
+    const draft = createOrderDraftFromPreset(pendingPlan || 'static');
+    setForm({
+      ...INITIAL_FORM,
+      title: draft.planName,
+      websiteType: 'Business Website',
+      contactEmail: user?.email || '',
+      phoneNumber: user?.phone || '',
+      packageType: draft.plan,
+      planName: draft.planName,
+      presetId: draft.presetId,
+      siteKind: draft.siteKind,
+      pages: draft.pages,
+      authTier: draft.authTier,
+      paymentIntegration: draft.paymentIntegration,
+      featureIds: draft.featureIds
+    });
+    setStep(0);
+    setErrors({});
+    setDone(false);
+  }, [orderModalOpen, pendingPlan, user]);
 
-    // Prefill plan when modal opens
-    useEffect(() => {
-        if (orderModalOpen && pendingPlan) {
-            const defaults = PLAN_DEFAULTS[pendingPlan] || PLAN_DEFAULTS.basic;
-            setForm(prev => ({
-                ...INITIAL_FORM,
-                plan: pendingPlan,
-                budget: defaults.budget,
-                pages: defaults.pages,
-                contactEmail: user?.email || '',
-            }));
-            setStep(0);
-            setErrors({});
-            setDone(false);
-        }
-    }, [orderModalOpen, pendingPlan, user]);
+  const pricing = useMemo(() => calculateProjectPricing({
+    siteKind: form.siteKind,
+    pages: form.pages,
+    authTier: form.authTier,
+    paymentIntegration: form.paymentIntegration,
+    featureIds: form.featureIds,
+    deliveryOption: form.deliveryOption
+  }), [form]);
 
-    // Scroll to top on step change
-    useEffect(() => {
-        scrollRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
-    }, [step]);
+  useEffect(() => {
+    setForm((current) => ({ ...current, packageType: pricing.total >= 35000 ? 'custom' : pricing.total >= 10000 ? 'premium' : pricing.total >= 5000 ? 'standard' : 'basic' }));
+  }, [pricing.total]);
 
-    const set = (k) => (e) => {
-        setForm(prev => ({ ...prev, [k]: e.target.value }));
-        if (errors[k]) setErrors(prev => ({ ...prev, [k]: '' }));
-    };
+  const setField = (key) => (event) => {
+    const value = event.target.type === 'checkbox' ? event.target.checked : event.target.value;
+    setForm((current) => ({ ...current, [key]: value }));
+    if (errors[key]) setErrors((current) => ({ ...current, [key]: '' }));
+  };
 
-    const toggleFeature = (f) => {
-        setForm(prev => ({
-            ...prev,
-            features: prev.features.includes(f)
-                ? prev.features.filter(x => x !== f)
-                : [...prev.features, f],
-        }));
-    };
+  const toggleFeature = (id) => {
+    setForm((current) => ({
+      ...current,
+      featureIds: current.featureIds.includes(id)
+        ? current.featureIds.filter((item) => item !== id)
+        : [...current.featureIds, id]
+    }));
+  };
 
-    // ── Step validation ──────────────────────────────────
-    const validateStep = () => {
-        const errs = {};
-        if (step === 0) {
-            if (!form.projectName.trim()) errs.projectName = 'Project name is required';
-            if (!form.websiteType) errs.websiteType = 'Please select a website type';
-            if (!form.pages || form.pages < 1) errs.pages = 'Enter at least 1 page';
-            if (!form.businessCategory.trim()) errs.businessCategory = 'Business category is required';
-        }
-        if (step === 2) {
-            if (!form.description.trim() || form.description.trim().length < 20)
-                errs.description = 'Please describe your project (at least 20 characters)';
-            if (!form.contactEmail.trim() || !/\S+@\S+\.\S+/.test(form.contactEmail))
-                errs.contactEmail = 'Valid email is required';
-        }
-        setErrors(errs);
-        return Object.keys(errs).length === 0;
-    };
+  const validateStep = () => {
+    const nextErrors = {};
+    if (step === 0) {
+      if (!form.title.trim()) nextErrors.title = 'Project title is required';
+      if (!form.websiteType) nextErrors.websiteType = 'Please select a website type';
+      if (!form.businessCategory.trim()) nextErrors.businessCategory = 'Business category is required';
+      if (!form.pages || form.pages < 1) nextErrors.pages = 'At least one page is required';
+    }
+    if (step === 2) {
+      if (!form.description.trim() || form.description.trim().length < 20) nextErrors.description = 'Please add at least 20 characters';
+      if (!form.contactEmail.trim()) nextErrors.contactEmail = 'Contact email is required';
+    }
+    if (step === 3 && !form.acceptedLegal) {
+      nextErrors.acceptedLegal = 'You must agree to the Privacy Policy and Terms of Use';
+    }
+    setErrors(nextErrors);
+    return Object.keys(nextErrors).length === 0;
+  };
 
-    const nextStep = () => {
-        if (!validateStep()) return;
-        setStep(prev => prev + 1);
-    };
+  const handleNext = () => {
+    if (!validateStep()) return;
+    setStep((current) => current + 1);
+  };
 
-    const prevStep = () => setStep(prev => prev - 1);
+  const handleSubmit = async () => {
+    if (!validateStep()) return;
+    if (!user?.emailVerified || !user?.phoneVerified) {
+      toast.error('Please verify your email and phone in your profile before creating an order.');
+      return;
+    }
+    setSubmitting(true);
+    try {
+      const payload = {
+        title: form.title,
+        description: form.description,
+        packageType: form.packageType,
+        presetId: form.presetId,
+        planName: form.planName,
+        siteKind: form.siteKind,
+        websiteType: form.websiteType,
+        pages: form.pages,
+        businessCategory: form.businessCategory,
+        designStyle: form.designStyle,
+        authTier: form.authTier,
+        paymentIntegration: form.paymentIntegration,
+        featureIds: form.featureIds,
+        deliveryOption: form.deliveryOption,
+        referenceWebsites: form.referenceWebsites,
+        contactEmail: form.contactEmail,
+        phoneNumber: form.phoneNumber,
+        deadline: form.preferredDeadline || null
+      };
 
-    const handleSubmit = async () => {
-        if (!validateStep()) return;
-        setSubmitting(true);
-        try {
-            const data = await createOrder(form).unwrap();
-            addCartItem(data);
-            setDone(true);
-            toast.success('Order created successfully. Please proceed to payment from the cart.');
-        } catch (err) {
-            toast.error(err.response?.data?.message || 'Failed to create order. Please try again.');
-        } finally {
-            setSubmitting(false);
-        }
-    };
+      const order = await createOrder(payload).unwrap();
+      addCartItem(order);
+      setDone(true);
+      toast.success('Order created successfully. Please continue to payment from the cart.');
+    } catch (error) {
+      toast.error(error?.data?.message || 'Failed to create order. Please try again.');
+    } finally {
+      setSubmitting(false);
+    }
+  };
 
-    const handleViewCart = () => {
-        closeOrderModal();
-        setTimeout(() => openCart(), 320);
-    };
+  if (!orderModalOpen) return null;
 
-    if (!orderModalOpen) return null;
+  return (
+    <AnimatePresence>
+      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[200] bg-black/60 backdrop-blur-sm" onClick={closeOrderModal} />
+      <motion.div initial={{ opacity: 0, scale: 0.95, y: 16 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 16 }} className="fixed inset-0 z-[201] flex items-center justify-center p-4 pointer-events-none">
+        <div className="pointer-events-auto w-full max-w-3xl max-h-[92vh] overflow-hidden rounded-3xl border" style={{ background: 'var(--bg-card)', borderColor: 'var(--border-strong)' }}>
+          <div className="flex items-center justify-between border-b px-6 py-5" style={{ borderColor: 'var(--border)' }}>
+            <div>
+              <h2 className="text-lg font-extrabold" style={{ color: 'var(--text-primary)' }}>{done ? 'Order Created' : 'Create Your Project Order'}</h2>
+              {!done ? <p className="mt-1 text-xs font-semibold uppercase tracking-[0.18em]" style={{ color: 'var(--text-muted)' }}>{form.planName}</p> : null}
+            </div>
+            <button type="button" onClick={closeOrderModal} className="rounded-xl p-2 hover:bg-black/5 dark:hover:bg-white/5"><X size={18} /></button>
+          </div>
 
-    return (
-        <AnimatePresence>
-            {orderModalOpen && (
-                <>
-                    {/* Backdrop */}
-                    <motion.div
-                        key="order-backdrop"
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        exit={{ opacity: 0 }}
-                        onClick={closeOrderModal}
-                        className="fixed inset-0 z-[200] bg-black/60 backdrop-blur-sm"
-                    />
+          {!done ? (
+            <div className="border-b px-6 py-4" style={{ borderColor: 'var(--border)' }}>
+              <div className="flex items-center gap-2">
+                {STEPS.map((item, index) => (
+                  <div key={item} className="flex flex-1 items-center gap-2 last:flex-none">
+                    <div className={`flex h-7 w-7 items-center justify-center rounded-full text-xs font-black ${index <= step ? 'bg-red-600 text-white' : 'text-slate-400'}`} style={index > step ? { border: '1px solid var(--border)' } : {}}>{index + 1}</div>
+                    <span className="hidden text-xs font-semibold sm:block" style={{ color: index === step ? 'var(--text-primary)' : 'var(--text-muted)' }}>{item}</span>
+                    {index < STEPS.length - 1 ? <div className="h-px flex-1" style={{ background: index < step ? '#dc2626' : 'var(--border)' }} /> : null}
+                  </div>
+                ))}
+              </div>
+            </div>
+          ) : null}
 
-                    {/* Modal */}
-                    <motion.div
-                        key="order-modal"
-                        initial={{ opacity: 0, scale: 0.94, y: 24 }}
-                        animate={{ opacity: 1, scale: 1, y: 0 }}
-                        exit={{ opacity: 0, scale: 0.94, y: 24 }}
-                        transition={{ type: 'spring', stiffness: 320, damping: 28 }}
-                        className="fixed inset-0 z-[201] flex items-center justify-center p-4 pointer-events-none"
-                    >
-                        <div className="pointer-events-auto w-full max-w-2xl max-h-[90vh] flex flex-col rounded-2xl shadow-2xl overflow-hidden"
-                            style={{ background: 'var(--bg-card)', border: '1px solid var(--border-strong)' }}>
+          <div className="max-h-[calc(92vh-132px)] overflow-y-auto px-6 py-6">
+            {done ? (
+              <div className="flex flex-col items-center justify-center gap-5 py-10 text-center">
+                <div className="flex h-20 w-20 items-center justify-center rounded-full" style={{ background: 'rgba(16,185,129,0.1)', border: '1px solid rgba(16,185,129,0.24)' }}>
+                  <CheckCircle className="h-10 w-10 text-emerald-500" />
+                </div>
+                <div>
+                  <h3 className="text-2xl font-black">Order placed successfully</h3>
+                  <p className="mt-2 text-sm" style={{ color: 'var(--text-secondary)' }}>Your configured project has been added to your orders and cart.</p>
+                </div>
+                <div className="flex flex-wrap justify-center gap-3">
+                  <button type="button" onClick={() => { closeOrderModal(); setTimeout(() => openCart(), 300); }} className="primary-btn rounded-2xl px-6 py-3 text-sm font-bold">View Cart & Pay</button>
+                  <button type="button" onClick={closeOrderModal} className="secondary-btn rounded-2xl px-6 py-3 text-sm font-bold">Close</button>
+                </div>
+              </div>
+            ) : (
+              <div className="grid gap-6 lg:grid-cols-[1.3fr_0.8fr]">
+                <div className="space-y-5">
+                  {step === 0 ? (
+                    <>
+                      <label className="block space-y-2"><span className="text-sm font-bold">Project title</span><input value={form.title} onChange={setField('title')} className={fieldClasses(errors.title)} style={inputStyle(errors.title)} /></label>
+                      <div className="grid gap-4 sm:grid-cols-2">
+                        <label className="block space-y-2"><span className="text-sm font-bold">Website type</span><select value={form.websiteType} onChange={setField('websiteType')} className={fieldClasses(errors.websiteType)} style={inputStyle(errors.websiteType)}><option value="">Select type</option>{WEBSITE_TYPES.map((item) => <option key={item} value={item}>{item}</option>)}</select></label>
+                        <label className="block space-y-2"><span className="text-sm font-bold">Pages</span><input type="number" min="1" value={form.pages} onChange={setField('pages')} className={fieldClasses(errors.pages)} style={inputStyle(errors.pages)} /></label>
+                      </div>
+                      <div className="grid gap-4 sm:grid-cols-2">
+                        <label className="block space-y-2"><span className="text-sm font-bold">Project category</span><input value={form.businessCategory} onChange={setField('businessCategory')} className={fieldClasses(errors.businessCategory)} style={inputStyle(errors.businessCategory)} /></label>
+                        <label className="block space-y-2"><span className="text-sm font-bold">Design style</span><select value={form.designStyle} onChange={setField('designStyle')} className={fieldClasses(false)} style={inputStyle(false)}><option value="">Select style</option>{DESIGN_STYLES.map((item) => <option key={item} value={item}>{item}</option>)}</select></label>
+                      </div>
+                    </>
+                  ) : null}
 
-                            {/* Header */}
-                            <div className="flex items-center justify-between px-6 py-5 border-b flex-shrink-0"
-                                style={{ borderColor: 'var(--border)' }}>
-                                <div>
-                                    <h2 className="text-lg font-extrabold" style={{ color: 'var(--text-primary)' }}>
-                                        {done ? '🎉 Order Created!' : 'Create Your Project Order'}
-                                    </h2>
-                                    {!done && (
-                                        <p className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>
-                                            {PLAN_DEFAULTS[form.plan]?.label}
-                                        </p>
-                                    )}
-                                </div>
-                                <button onClick={closeOrderModal}
-                                    className="w-9 h-9 rounded-xl flex items-center justify-center transition-colors hover:bg-red-50 dark:hover:bg-red-500/10">
-                                    <X className="w-5 h-5 text-slate-500" />
-                                </button>
-                            </div>
-
-                            {/* Progress */}
-                            {!done && (
-                                <div className="px-6 pt-4 pb-3 flex-shrink-0">
-                                    <div className="flex items-center gap-1.5">
-                                        {STEPS.map((s, i) => (
-                                            <div key={s} className="flex items-center gap-1.5 flex-1 last:flex-none">
-                                                <div className={`flex-shrink-0 w-6 h-6 rounded-full flex items-center justify-center text-[11px] font-black transition-all ${i < step ? 'bg-emerald-500 text-white'
-                                                        : i === step ? 'bg-red-600 text-white'
-                                                            : 'text-slate-400 border'}`}
-                                                    style={i > step ? { borderColor: 'var(--border)' } : {}}>
-                                                    {i < step ? <CheckCircle className="w-3.5 h-3.5" /> : i + 1}
-                                                </div>
-                                                <span className={`text-xs font-semibold hidden sm:block ${i === step ? 'text-red-600 dark:text-red-400' : 'text-slate-400'
-                                                    }`}>{s}</span>
-                                                {i < STEPS.length - 1 && (
-                                                    <div className="flex-1 h-px mx-1" style={{ background: i < step ? '#10b981' : 'var(--border)' }} />
-                                                )}
-                                            </div>
-                                        ))}
-                                    </div>
-                                </div>
-                            )}
-
-                            {/* Body */}
-                            <div ref={scrollRef} className="flex-1 overflow-y-auto px-6 py-4 space-y-5">
-
-                                {/* ── SUCCESS ── */}
-                                {done && (
-                                    <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}
-                                        className="flex flex-col items-center text-center py-8 gap-5">
-                                        <div className="w-20 h-20 rounded-full flex items-center justify-center"
-                                            style={{ background: 'rgba(16,185,129,0.1)', border: '1px solid rgba(16,185,129,0.25)' }}>
-                                            <CheckCircle className="w-10 h-10 text-emerald-500" />
-                                        </div>
-                                        <div>
-                                            <h3 className="text-xl font-extrabold mb-2" style={{ color: 'var(--text-primary)' }}>
-                                                Order Placed Successfully!
-                                            </h3>
-                                            <p className="text-sm leading-relaxed" style={{ color: 'var(--text-muted)' }}>
-                                                Your project <strong style={{ color: 'var(--text-primary)' }}>{form.projectName}</strong> has been added to your cart.
-                                                Order created successfully. Please proceed to payment from the cart.
-                                            </p>
-                                        </div>
-                                        <div className="flex gap-3 pt-2 flex-wrap justify-center">
-                                            <button onClick={handleViewCart}
-                                                className="primary-btn px-6 py-3 rounded-xl font-bold text-sm">
-                                                View Cart & Pay
-                                            </button>
-                                            <button onClick={closeOrderModal}
-                                                className="secondary-btn px-6 py-3 rounded-xl font-bold text-sm">
-                                                Continue Browsing
-                                            </button>
-                                        </div>
-                                    </motion.div>
-                                )}
-
-                                {/* ── STEP 0: Project Info ── */}
-                                {!done && step === 0 && (
-                                    <motion.div key="step0" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} className="space-y-5">
-                                        <FormField label="Project Name" required error={errors.projectName}>
-                                            <input
-                                                className={fieldClasses(errors.projectName)}
-                                                style={inputStyle(errors.projectName)}
-                                                placeholder="e.g. My Business Website"
-                                                value={form.projectName}
-                                                onChange={set('projectName')}
-                                            />
-                                        </FormField>
-
-                                        <FormField label="Plan" required>
-                                            <select className={fieldClasses(false)} style={inputStyle(false)}
-                                                value={form.plan}
-                                                onChange={(e) => {
-                                                    const p = e.target.value;
-                                                    const d = PLAN_DEFAULTS[p];
-                                                    setForm(prev => ({ ...prev, plan: p, budget: d.budget, pages: d.pages }));
-                                                }}>
-                                                {Object.entries(PLAN_DEFAULTS).map(([k, v]) => (
-                                                    <option key={k} value={k}>{v.label}</option>
-                                                ))}
-                                            </select>
-                                        </FormField>
-
-                                        <div className="grid grid-cols-2 gap-4">
-                                            <FormField label="Website Type" required error={errors.websiteType}>
-                                                <select className={fieldClasses(errors.websiteType)} style={inputStyle(errors.websiteType)}
-                                                    value={form.websiteType} onChange={set('websiteType')}>
-                                                    <option value="">Select type</option>
-                                                    {WEBSITE_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
-                                                </select>
-                                            </FormField>
-                                            <FormField label="Number of Pages" required error={errors.pages}>
-                                                <input type="number" min="1" max="100"
-                                                    className={fieldClasses(errors.pages)}
-                                                    style={inputStyle(errors.pages)}
-                                                    value={form.pages}
-                                                    onChange={(e) => { setForm(p => ({ ...p, pages: parseInt(e.target.value) || 1 })); if (errors.pages) setErrors(p => ({ ...p, pages: '' })); }}
-                                                />
-                                            </FormField>
-                                        </div>
-
-                                        <FormField label="Business Category / Industry" required error={errors.businessCategory}>
-                                            <input
-                                                className={fieldClasses(errors.businessCategory)}
-                                                style={inputStyle(errors.businessCategory)}
-                                                placeholder="e.g. Retail, Healthcare, Technology..."
-                                                value={form.businessCategory}
-                                                onChange={set('businessCategory')}
-                                            />
-                                        </FormField>
-
-                                        <FormField label="Design Style Preference">
-                                            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                                                {DESIGN_STYLES.map(style => (
-                                                    <button key={style} type="button"
-                                                        onClick={() => setForm(p => ({ ...p, designStyle: style === p.designStyle ? '' : style }))}
-                                                        className={`px-3 py-2.5 rounded-xl text-xs font-semibold text-left transition-all ${form.designStyle === style
-                                                                ? 'bg-red-600 text-white'
-                                                                : 'hover:border-red-300'
-                                                            }`}
-                                                        style={form.designStyle !== style ? { background: 'var(--bg-card-inner)', border: '1px solid var(--border)', color: 'var(--text-secondary)' } : {}}>
-                                                        {style}
-                                                    </button>
-                                                ))}
-                                            </div>
-                                        </FormField>
-                                    </motion.div>
-                                )}
-
-                                {/* ── STEP 1: Features ── */}
-                                {!done && step === 1 && (
-                                    <motion.div key="step1" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} className="space-y-5">
-                                        <FormField label="Required Features" hint="Select all that apply to your project">
-                                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                                                {FEATURE_OPTIONS.map(f => (
-                                                    <label key={f} className={`flex items-center gap-3 p-3 rounded-xl cursor-pointer transition-all select-none ${form.features.includes(f) ? 'bg-red-50 dark:bg-red-500/10 border border-red-300 dark:border-red-500/30' : ''
-                                                        }`}
-                                                        style={!form.features.includes(f) ? { background: 'var(--bg-card-inner)', border: '1px solid var(--border)' } : {}}>
-                                                        <input type="checkbox" className="sr-only" checked={form.features.includes(f)} onChange={() => toggleFeature(f)} />
-                                                        <div className={`w-4 h-4 rounded border-2 flex items-center justify-center flex-shrink-0 ${form.features.includes(f) ? 'bg-red-600 border-red-600' : 'border-slate-400'
-                                                            }`}>
-                                                            {form.features.includes(f) && <CheckCircle className="w-3 h-3 text-white" strokeWidth={3} />}
-                                                        </div>
-                                                        <span className="text-sm font-medium" style={{ color: 'var(--text-secondary)' }}>{f}</span>
-                                                    </label>
-                                                ))}
-                                            </div>
-                                        </FormField>
-
-                                        <FormField label="Preferred Deadline">
-                                            <input type="date"
-                                                className={fieldClasses(false)}
-                                                style={inputStyle(false)}
-                                                value={form.preferredDeadline}
-                                                onChange={set('preferredDeadline')}
-                                                min={new Date().toISOString().split('T')[0]}
-                                            />
-                                        </FormField>
-
-                                        <FormField label="Delivery Speed">
-                                            <div className="flex gap-3 flex-wrap">
-                                                {[
-                                                    { value: 'normal', label: 'Standard', note: 'Included' },
-                                                    { value: 'fast', label: '2× Faster', note: '+1,500 SAR' },
-                                                    { value: 'urgent', label: '3× Urgent', note: '+3,000 SAR' },
-                                                ].map(opt => (
-                                                    <button key={opt.value} type="button"
-                                                        onClick={() => setForm(p => ({ ...p, deliveryOption: opt.value }))}
-                                                        className={`flex-1 min-w-[100px] px-4 py-3 rounded-xl text-sm font-bold transition-all ${form.deliveryOption === opt.value ? 'bg-red-600 text-white' : 'hover:border-red-300'
-                                                            }`}
-                                                        style={form.deliveryOption !== opt.value ? { background: 'var(--bg-card-inner)', border: '1px solid var(--border)', color: 'var(--text-secondary)' } : {}}>
-                                                        <div>{opt.label}</div>
-                                                        <div className={`text-[11px] font-medium mt-0.5 ${form.deliveryOption === opt.value ? 'text-red-100' : 'text-slate-400'}`}>{opt.note}</div>
-                                                    </button>
-                                                ))}
-                                            </div>
-                                        </FormField>
-                                    </motion.div>
-                                )}
-
-                                {/* ── STEP 2: Description ── */}
-                                {!done && step === 2 && (
-                                    <motion.div key="step2" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} className="space-y-5">
-                                        <FormField label="Project Description" required error={errors.description}
-                                            hint="Explain what the website is about, your goals, and any important requirements.">
-                                            <textarea rows={5}
-                                                className={fieldClasses(errors.description)}
-                                                style={inputStyle(errors.description)}
-                                                placeholder="Tell us about your business, what the website should do, who the target audience is, and any specific requirements you have..."
-                                                value={form.description}
-                                                onChange={set('description')}
-                                            />
-                                        </FormField>
-
-                                        <FormField label="Reference Websites / Inspiration Links"
-                                            hint="Share URLs of websites you like the look or functionality of (optional)">
-                                            <textarea rows={3}
-                                                className={fieldClasses(false)}
-                                                style={inputStyle(false)}
-                                                placeholder="https://example.com, https://another.com..."
-                                                value={form.referenceWebsites}
-                                                onChange={set('referenceWebsites')}
-                                            />
-                                        </FormField>
-
-                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                            <FormField label="Contact Email" required error={errors.contactEmail}>
-                                                <input type="email"
-                                                    className={fieldClasses(errors.contactEmail)}
-                                                    style={inputStyle(errors.contactEmail)}
-                                                    placeholder="your@email.com"
-                                                    value={form.contactEmail}
-                                                    onChange={set('contactEmail')}
-                                                />
-                                            </FormField>
-                                            <FormField label="Phone Number (Optional)">
-                                                <input type="tel"
-                                                    className={fieldClasses(false)}
-                                                    style={inputStyle(false)}
-                                                    placeholder="+966 50 000 0000"
-                                                    value={form.phoneNumber}
-                                                    onChange={set('phoneNumber')}
-                                                />
-                                            </FormField>
-                                        </div>
-
-                                        {/* File upload hint */}
-                                        <div className="flex items-center gap-3 p-4 rounded-xl cursor-pointer hover:border-red-300 transition-colors"
-                                            style={{ background: 'var(--bg-card-inner)', border: '1px dashed var(--border-strong)' }}
-                                            onClick={() => fileRef.current?.click()}>
-                                            <Upload className="w-5 h-5 text-slate-400 flex-shrink-0" />
-                                            <div>
-                                                <p className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>Upload Reference Files (Optional)</p>
-                                                <p className="text-xs" style={{ color: 'var(--text-muted)' }}>Logos, wireframes, brand guidelines — PNG, JPG, PDF</p>
-                                            </div>
-                                            <input ref={fileRef} type="file" className="hidden" accept=".png,.jpg,.jpeg,.pdf" multiple />
-                                        </div>
-                                    </motion.div>
-                                )}
-
-                                {/* ── STEP 3: Confirm ── */}
-                                {!done && step === 3 && (
-                                    <motion.div key="step3" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} className="space-y-4">
-                                        <div className="rounded-2xl p-5 space-y-3"
-                                            style={{ background: 'var(--bg-card-inner)', border: '1px solid var(--border)' }}>
-                                            <h4 className="font-bold text-sm uppercase tracking-widest" style={{ color: 'var(--text-muted)' }}>Order Summary</h4>
-                                            {[
-                                                ['Project', form.projectName],
-                                                ['Plan', PLAN_DEFAULTS[form.plan]?.label],
-                                                ['Website Type', form.websiteType],
-                                                ['Pages', form.pages],
-                                                ['Category', form.businessCategory],
-                                                ['Design Style', form.designStyle || 'Not specified'],
-                                                ['Delivery', form.deliveryOption],
-                                                ['Deadline', form.preferredDeadline || 'Flexible'],
-                                                ['Features', form.features.length > 0 ? form.features.join(', ') : 'None selected'],
-                                            ].map(([k, v]) => (
-                                                <div key={k} className="flex justify-between items-start text-sm gap-4">
-                                                    <span className="font-semibold flex-shrink-0" style={{ color: 'var(--text-muted)' }}>{k}</span>
-                                                    <span className="font-bold text-right" style={{ color: 'var(--text-primary)' }}>{v}</span>
-                                                </div>
-                                            ))}
-                                        </div>
-
-                                        <div className="flex justify-between items-center p-5 rounded-2xl"
-                                            style={{ background: 'linear-gradient(135deg, rgba(220,38,38,0.08), rgba(220,38,38,0.02))', border: '1px solid rgba(220,38,38,0.2)' }}>
-                                            <span className="font-extrabold text-sm uppercase tracking-widest" style={{ color: 'var(--text-muted)' }}>Estimated Total</span>
-                                            <span className="text-2xl font-black gradient-text">
-                                                {form.budget > 0 ? `SAR ${form.budget.toLocaleString()}` : 'Custom Quote'}
-                                            </span>
-                                        </div>
-
-                                        <div className="flex items-start gap-3 p-4 rounded-xl"
-                                            style={{ background: 'rgba(59,130,246,0.06)', border: '1px solid rgba(59,130,246,0.15)' }}>
-                                            <AlertCircle className="w-4 h-4 text-blue-400 flex-shrink-0 mt-0.5" />
-                                            <p className="text-xs leading-relaxed" style={{ color: 'var(--text-muted)' }}>
-                                                After submission, your order will be added to cart. You can then proceed to payment. Final pricing may be adjusted based on your specific requirements.
-                                            </p>
-                                        </div>
-                                    </motion.div>
-                                )}
-                            </div>
-
-                            {/* Footer */}
-                            {!done && (
-                                <div className="flex gap-3 px-6 py-4 border-t flex-shrink-0"
-                                    style={{ borderColor: 'var(--border)' }}>
-                                    {step > 0 && (
-                                        <button onClick={prevStep}
-                                            className="secondary-btn px-5 py-3 rounded-xl font-bold text-sm">
-                                            ← Back
-                                        </button>
-                                    )}
-                                    <div className="flex-1" />
-                                    {step < STEPS.length - 1 ? (
-                                        <button onClick={nextStep}
-                                            className="primary-btn px-6 py-3 rounded-xl font-bold text-sm flex items-center gap-2">
-                                            Next <ChevronRight className="w-4 h-4" />
-                                        </button>
-                                    ) : (
-                                        <button onClick={handleSubmit} disabled={submitting}
-                                            className="primary-btn px-7 py-3 rounded-xl font-bold text-sm flex items-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed">
-                                            {submitting ? <><Loader2 className="w-4 h-4 animate-spin" /> Submitting…</> : 'Create Order & Add to Cart'}
-                                        </button>
-                                    )}
-                                </div>
-                            )}
+                  {step === 1 ? (
+                    <>
+                      <div className="grid gap-4 sm:grid-cols-2">
+                        <label className="block space-y-2"><span className="text-sm font-bold">Site type</span><select value={form.siteKind} onChange={setField('siteKind')} className={fieldClasses(false)} style={inputStyle(false)}><option value="static">Static Website</option><option value="dynamic">Dynamic Website</option></select></label>
+                        <label className="block space-y-2"><span className="text-sm font-bold">Authentication</span><select value={form.authTier} onChange={setField('authTier')} className={fieldClasses(false)} style={inputStyle(false)}>{AUTH_OPTIONS.map((item) => <option key={item.id} value={item.id}>{item.label}</option>)}</select></label>
+                      </div>
+                      <label className="flex items-center gap-3 rounded-2xl border px-4 py-4" style={{ background: 'var(--bg-card-inner)', borderColor: 'var(--border)' }}><input type="checkbox" checked={form.paymentIntegration} onChange={setField('paymentIntegration')} /><span className="text-sm font-semibold">Include payment gateway integration</span></label>
+                      <div>
+                        <div className="mb-3 text-sm font-bold">Additional features</div>
+                        <div className="grid gap-3 sm:grid-cols-2">
+                          {FEATURE_OPTIONS.map((feature) => {
+                            const active = form.featureIds.includes(feature.id);
+                            return <button key={feature.id} type="button" onClick={() => toggleFeature(feature.id)} className={`rounded-2xl border px-4 py-4 text-left ${active ? 'border-red-500 bg-red-50 dark:bg-red-500/10' : ''}`} style={active ? {} : { background: 'var(--bg-card-inner)', borderColor: 'var(--border)' }}><div className="font-bold">{feature.label}</div><div className="mt-1 text-sm" style={{ color: 'var(--text-secondary)' }}>{formatInr(feature.price)}</div></button>;
+                          })}
                         </div>
-                    </motion.div>
-                </>
-            )}
-        </AnimatePresence>
-    );
-};
+                      </div>
+                      <label className="block space-y-2"><span className="text-sm font-bold">Delivery preference</span><select value={form.deliveryOption} onChange={setField('deliveryOption')} className={fieldClasses(false)} style={inputStyle(false)}>{DELIVERY_OPTIONS.map((item) => <option key={item.value} value={item.value}>{item.label} {item.extra ? `(+${formatInr(item.extra)})` : '(Included)'}</option>)}</select></label>
+                    </>
+                  ) : null}
 
-// ── Helpers ──────────────────────────────────────────────
-const FormField = ({ label, required, error, hint, children }) => (
-    <div>
-        <label className="block text-sm font-bold mb-1.5" style={{ color: 'var(--text-primary)' }}>
-            {label} {required && <span className="text-red-500">*</span>}
-        </label>
-        {hint && <p className="text-xs mb-2" style={{ color: 'var(--text-muted)' }}>{hint}</p>}
-        {children}
-        <AnimatePresence>
-            {error && (
-                <motion.p initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
-                    className="mt-1.5 text-xs font-semibold text-red-500 flex items-center gap-1">
-                    <AlertCircle className="w-3.5 h-3.5" /> {error}
-                </motion.p>
+                  {step === 2 ? (
+                    <>
+                      <label className="block space-y-2"><span className="text-sm font-bold">Project notes</span><textarea rows={5} value={form.description} onChange={setField('description')} className={fieldClasses(errors.description)} style={inputStyle(errors.description)} /></label>
+                      <label className="block space-y-2"><span className="text-sm font-bold">Reference websites</span><textarea rows={3} value={form.referenceWebsites} onChange={setField('referenceWebsites')} className={fieldClasses(false)} style={inputStyle(false)} /></label>
+                      <div className="grid gap-4 sm:grid-cols-2">
+                        <label className="block space-y-2"><span className="text-sm font-bold">Contact email</span><input type="email" value={form.contactEmail} onChange={setField('contactEmail')} className={fieldClasses(errors.contactEmail)} style={inputStyle(errors.contactEmail)} /></label>
+                        <label className="block space-y-2"><span className="text-sm font-bold">Phone</span><input value={form.phoneNumber} onChange={setField('phoneNumber')} className={fieldClasses(false)} style={inputStyle(false)} /></label>
+                      </div>
+                      <label className="block space-y-2"><span className="text-sm font-bold">Preferred deadline</span><input type="date" value={form.preferredDeadline} onChange={setField('preferredDeadline')} className={fieldClasses(false)} style={inputStyle(false)} /></label>
+                    </>
+                  ) : null}
+
+                  {step === 3 ? (
+                    <div className="space-y-4 rounded-[24px] border p-5" style={{ background: 'var(--bg-card-inner)', borderColor: 'var(--border)' }}>
+                      <div className="text-sm font-bold uppercase tracking-[0.2em]" style={{ color: 'var(--text-muted)' }}>Order summary</div>
+                      {[
+                        ['Plan', form.planName],
+                        ['Website type', form.websiteType],
+                        ['Site kind', form.siteKind],
+                        ['Pages', form.pages],
+                        ['Authentication', form.authTier],
+                        ['Payment integration', form.paymentIntegration ? 'Included' : 'No'],
+                        ['Features', pricing.selectedFeatures.length ? pricing.selectedFeatures.map((item) => item.label).join(', ') : 'No extra features'],
+                        ['Notes', form.description || 'None'],
+                        ['Reference websites', form.referenceWebsites || 'None'],
+                        ['Status', 'Pending']
+                      ].map(([label, value]) => <div key={label} className="flex items-start justify-between gap-4 text-sm"><span style={{ color: 'var(--text-muted)' }}>{label}</span><span className="text-right font-bold">{value}</span></div>)}
+
+                      <label className="mt-4 flex items-start gap-3 rounded-2xl border px-4 py-4" style={{ background: 'var(--bg-card)', borderColor: errors.acceptedLegal ? '#ef4444' : 'var(--border)' }}>
+                        <input type="checkbox" checked={form.acceptedLegal} onChange={setField('acceptedLegal')} className="mt-1" />
+                        <span className="text-sm leading-6" style={{ color: 'var(--text-secondary)' }}>
+                          I agree to the <a href="/privacy" target="_blank" rel="noreferrer" className="font-semibold text-red-600 hover:underline">Privacy Policy</a> and <a href="/terms" target="_blank" rel="noreferrer" className="font-semibold text-red-600 hover:underline">Terms of Use</a>.
+                        </span>
+                      </label>
+                      {errors.acceptedLegal ? <div className="flex items-center gap-2 text-xs font-semibold text-red-500"><AlertCircle className="h-3.5 w-3.5" /> {errors.acceptedLegal}</div> : null}
+                    </div>
+                  ) : null}
+
+                  <div className="flex gap-3 pt-2">
+                    {step > 0 ? <button type="button" onClick={() => setStep((current) => current - 1)} className="secondary-btn rounded-2xl px-5 py-3 text-sm font-bold">Back</button> : null}
+                    <div className="flex-1" />
+                    {step < STEPS.length - 1 ? <button type="button" onClick={handleNext} className="primary-btn inline-flex items-center gap-2 rounded-2xl px-6 py-3 text-sm font-bold">Next <ChevronRight size={16} /></button> : <button type="button" onClick={handleSubmit} disabled={submitting} className="primary-btn inline-flex items-center gap-2 rounded-2xl px-6 py-3 text-sm font-bold disabled:opacity-60">{submitting ? <><Loader2 className="h-4 w-4 animate-spin" /> Saving</> : 'Create Order'}</button>}
+                  </div>
+                </div>
+
+                <div className="rounded-[26px] border p-5 h-fit" style={{ background: 'linear-gradient(180deg, var(--bg-card), var(--bg-card-inner))', borderColor: 'var(--border)' }}>
+                  <div className="text-xs font-bold uppercase tracking-[0.2em]" style={{ color: 'var(--text-muted)' }}>Live pricing</div>
+                  <div className="mt-3 text-4xl font-black">{formatInr(pricing.total)}</div>
+                  <div className="mt-5 space-y-3">
+                    {pricing.breakdown.map((item) => <div key={item.key} className="flex items-start justify-between gap-3 text-sm"><span style={{ color: 'var(--text-secondary)' }}>{item.label}</span><span className="font-bold">{formatInr(item.amount)}</span></div>)}
+                  </div>
+                </div>
+              </div>
             )}
-        </AnimatePresence>
-    </div>
-);
+          </div>
+        </div>
+      </motion.div>
+    </AnimatePresence>
+  );
+};
 
 export default OrderModal;

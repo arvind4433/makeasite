@@ -9,7 +9,7 @@ const budgets = ['Under ₹5,000', '₹5,000 – ₹15,000', '₹15,000 – ₹5
 
 const contactInfo = [
     { icon: Mail, label: 'Email Us', value: 'arvind889481@gmail.com', href: 'mailto:arvind889481@gmail.com' },
-    { icon: Phone, label: 'WhatsApp', value: '+91 88944 81XXX', href: '#' },
+    { icon: Phone, label: 'WhatsApp', value: '+91 8894810531', href: '#' },
     { icon: MapPin, label: 'Location', value: 'India — Remote Worldwide', href: '#' },
 ];
 

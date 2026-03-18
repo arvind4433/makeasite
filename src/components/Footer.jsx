@@ -26,7 +26,7 @@ const links = {
     ],
     Legal: [
         { label: 'Privacy Policy', to: '/privacy' },
-        { label: 'Terms of Service', to: '/terms' },
+        { label: 'Terms of Use', to: '/terms' },
         { label: 'Refund Policy', to: '/refund' },
         { label: 'About Us', to: '/about' },
     ],
@@ -48,7 +48,7 @@ const Footer = () => (
                     </Link>
 
                     <p className="text-sm text-slate-500 leading-relaxed max-w-xs">
-                        We design and ship high-performance websites and SaaS platforms for modern businesses worldwide. Starting from 3,000 SAR.
+                        We design and ship high-performance websites and SaaS platforms for modern businesses worldwide. Starting from INR 2,000.
                     </p>
 
                     <Link to="/pricing"

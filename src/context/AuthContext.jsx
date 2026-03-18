@@ -8,15 +8,40 @@ import {
     useLoginMutation,
     useVerifyOtpMutation,
     useRegisterMutation,
+    useVerifyContactOtpMutation,
     useForgotPasswordMutation,
     useResetPasswordMutation,
+    useSendProfileOtpMutation,
+    useVerifyProfileOtpMutation,
 } from '../services/authApi.js';
 
 export const AuthContext = createContext();
 
-/* ── Persist helper ─────────────────────────────────── */
 const persist = (data) => {
     localStorage.setItem('userInfo', JSON.stringify(data));
+};
+
+const getErrorMessage = (error, fallback = 'Something went wrong') => {
+    const message = error?.data?.message || error?.response?.data?.message || error?.message;
+
+    if (Array.isArray(message)) {
+        return message[0] || fallback;
+    }
+
+    if (typeof message === 'string' && message.trim()) {
+        return message;
+    }
+
+    if (
+        error?.status === 'FETCH_ERROR' ||
+        error?.code === 'ERR_NETWORK' ||
+        error?.message === 'Network Error' ||
+        String(error?.error || '').toLowerCase().includes('failed to fetch')
+    ) {
+        return 'Network error, please try again';
+    }
+
+    return fallback;
 };
 
 export const AuthProvider = ({ children }) => {
@@ -27,10 +52,12 @@ export const AuthProvider = ({ children }) => {
     const [loginMutation] = useLoginMutation();
     const [verifyOtpMutation] = useVerifyOtpMutation();
     const [registerMutation] = useRegisterMutation();
+    const [verifyContactOtpMutation] = useVerifyContactOtpMutation();
     const [forgotPasswordMutation] = useForgotPasswordMutation();
     const [resetPasswordMutation] = useResetPasswordMutation();
+    const [sendProfileOtpMutation] = useSendProfileOtpMutation();
+    const [verifyProfileOtpMutation] = useVerifyProfileOtpMutation();
 
-    /* Restore session from localStorage */
     useEffect(() => {
         const stored = localStorage.getItem('userInfo');
         if (stored) {
@@ -44,7 +71,6 @@ export const AuthProvider = ({ children }) => {
         setLoading(false);
     }, []);
 
-    /* ── Hydrate user session (used by OAuth callback) ── */
     const hydrateUser = (data) => {
         if (!data?.token) return;
         setUser(data);
@@ -52,83 +78,132 @@ export const AuthProvider = ({ children }) => {
         dispatch(setCredentials(data));
     };
 
-    /* ── Step 1: Email/password → sends OTP, returns { message, email } ── */
-    const login = async (email, password) => {
+    const login = async (credentials) => {
         startLoading();
         try {
-            const data = await loginMutation({ email, password }).unwrap();
-            return data;
-        } catch (err) {
-            toast.error(err.response?.data?.message || 'Login failed');
-            throw err;
-        } finally { stopLoading(); }
+            return await loginMutation(credentials).unwrap();
+        } catch (error) {
+            toast.error(getErrorMessage(error, 'Login failed'));
+            throw error;
+        } finally {
+            stopLoading();
+        }
     };
 
-    /* ── Step 2: Verify OTP → returns full user+token ── */
-    const verifyOTP = async (email, otp) => {
+    const verifyOTP = async (identifier, otp) => {
         startLoading();
         try {
-            const data = await verifyOtpMutation({ email, otp }).unwrap();
+            const isEmail = identifier?.includes('@');
+            const body = isEmail ? { email: identifier, otp } : { phone: identifier, otp };
+            const data = await verifyOtpMutation(body).unwrap();
             hydrateUser(data);
-            toast.success(`Welcome${data.name ? ', ' + data.name.split(' ')[0] : ''}! You are now signed in.`);
             return data;
-        } catch (err) {
-            toast.error(err.response?.data?.message || 'Invalid or expired OTP');
-            throw err;
-        } finally { stopLoading(); }
+        } catch (error) {
+            toast.error(getErrorMessage(error, 'Invalid OTP'));
+            throw error;
+        } finally {
+            stopLoading();
+        }
     };
 
-    /* ── Register ─────────────────────────────────── */
+    const verifyContactOTP = async ({ channel, otp, email, phone }) => {
+        startLoading();
+        try {
+            return await verifyContactOtpMutation({ channel, otp, email, phone }).unwrap();
+        } catch (error) {
+            toast.error(getErrorMessage(error, 'Invalid OTP'));
+            throw error;
+        } finally {
+            stopLoading();
+        }
+    };
+
     const register = async (userData) => {
         startLoading();
         try {
             const data = await registerMutation(userData).unwrap();
-            toast.success(data.message || 'Registration successful. OTP sent to your email.');
+            toast.success(data.message || 'Verification OTPs sent');
             return data;
-        } catch (err) {
-            toast.error(err.response?.data?.message || 'Registration failed');
-            throw err;
-        } finally { stopLoading(); }
+        } catch (error) {
+            toast.error(getErrorMessage(error, 'Registration failed'));
+            throw error;
+        } finally {
+            stopLoading();
+        }
     };
 
-    /* ── Forgot / Reset Password ─────────────────── */
+    const sendProfileOTP = async (channel) => {
+        startLoading();
+        try {
+            const data = await sendProfileOtpMutation({ channel }).unwrap();
+            toast.success(data.message || `${channel} OTP sent`);
+            return data;
+        } catch (error) {
+            toast.error(getErrorMessage(error, 'Failed to send OTP'));
+            throw error;
+        } finally {
+            stopLoading();
+        }
+    };
+
+    const verifyProfileOTP = async (channel, otp) => {
+        startLoading();
+        try {
+            const data = await verifyProfileOtpMutation({ channel, otp }).unwrap();
+            const stored = JSON.parse(localStorage.getItem('userInfo') || '{}');
+            const merged = { ...stored, ...data.user };
+            hydrateUser(merged);
+            toast.success(data.message || `${channel} verified successfully`);
+            return data;
+        } catch (error) {
+            toast.error(getErrorMessage(error, 'Invalid OTP'));
+            throw error;
+        } finally {
+            stopLoading();
+        }
+    };
+
     const forgotPassword = async (email) => {
         startLoading();
         try {
             const data = await forgotPasswordMutation({ email }).unwrap();
-            toast.success(data.message);
+            toast.success(data.message || 'Reset OTP sent to email');
             return data;
-        } catch (err) {
-            toast.error(err.response?.data?.message || 'Failed to send reset email');
-            throw err;
-        } finally { stopLoading(); }
+        } catch (error) {
+            toast.error(getErrorMessage(error, 'Failed to send reset email'));
+            throw error;
+        } finally {
+            stopLoading();
+        }
     };
 
     const resetPassword = async (email, otp, newPassword) => {
         startLoading();
         try {
-            const data = await resetPasswordMutation({ email, otp, newPassword }).unwrap();
-            toast.success(data.message || 'Password reset successfully!');
+            const data = await resetPasswordMutation({ email, otp, password: newPassword }).unwrap();
+            toast.success(data.message || 'Password reset successful');
             return data;
-        } catch (err) {
-            toast.error(err.response?.data?.message || 'Failed to reset password');
-            throw err;
-        } finally { stopLoading(); }
+        } catch (error) {
+            toast.error(getErrorMessage(error, 'Failed to reset password'));
+            throw error;
+        } finally {
+            stopLoading();
+        }
     };
 
-    /* ── Social OAuth (redirect-based) ─────────────── */
     const googleLogin = async (credential) => {
         startLoading();
         try {
             const { data } = await apiClient.post('/auth/google', { credential });
             hydrateUser(data);
-            toast.success(`Welcome${data.name ? ', ' + data.name.split(' ')[0] : ''}! Signed in with Google.`);
+            toast.success('Login Successful');
             return data;
-        } catch (err) {
-            const msg = err.response?.data?.message || 'Google sign-in failed. Please try again.';
-            toast.error(msg);
-            throw err;
-        } finally { stopLoading(); }
+        } catch (error) {
+            toast.error(getErrorMessage(error, 'Google sign-in failed. Please try again.'));
+            throw error;
+        } finally {
+            stopLoading();
+        }
     };
 
     const facebookLogin = async (accessToken, userID) => {
@@ -136,19 +211,20 @@ export const AuthProvider = ({ children }) => {
         try {
             const { data } = await apiClient.post('/auth/facebook', { accessToken, userID });
             hydrateUser(data);
-            toast.success(`Welcome${data.name ? ', ' + data.name.split(' ')[0] : ''}! Signed in with Facebook.`);
+            toast.success('Login Successful');
             return data;
-        } catch (err) {
-            const msg = err.response?.data?.message || 'Facebook sign-in failed. Please try again.';
-            toast.error(msg);
-            throw err;
-        } finally { stopLoading(); }
+        } catch (error) {
+            toast.error(getErrorMessage(error, 'Facebook sign-in failed. Please try again.'));
+            throw error;
+        } finally {
+            stopLoading();
+        }
     };
 
-    /* ── Logout ─────────────────────────────────────── */
     const logout = () => {
         setUser(null);
         localStorage.removeItem('userInfo');
+        localStorage.removeItem('token');
         dispatch(clearCredentials());
         toast.info('Signed out successfully.');
     };
@@ -161,8 +237,11 @@ export const AuthProvider = ({ children }) => {
             login,
             register,
             verifyOTP,
+            verifyContactOTP,
             forgotPassword,
             resetPassword,
+            sendProfileOTP,
+            verifyProfileOTP,
             googleLogin,
             facebookLogin,
             logout,
