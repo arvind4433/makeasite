@@ -71,10 +71,10 @@ const Logo = ({ size = 44, showText = true }) => {
       {/* text */}
       {showText && (
         <div className="leading-tight">
-          <span className="font-extrabold text-base sm:text-lg tracking-tight text-gray-900">
-            Make<span className="text-red-600">A</span>Site
-          </span>
-          <div className="text-[10px] uppercase tracking-widest text-gray-500">
+         <span className="font-extrabold text-lg tracking-tight text-gray-900 dark:text-white">
+  Make<span className="text-red-600">A</span>Site
+</span>
+          <div className="text-[10px] uppercase tracking-widest text-gray-500 dark:text-white">
             Freelance Studio
           </div>
         </div>

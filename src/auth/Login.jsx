@@ -184,9 +184,16 @@ export default function LoginModal({
                     </button>
                   </div>
 
-                  <div className="rounded-2xl border px-4 py-1.5 text-[13px] leading-5 sm:text-sm sm:leading-6" style={{ borderColor: 'var(--border)', background: 'var(--bg-card-inner)', color: 'var(--text-secondary)' }}>
-                    Enter your {mode === "email" ? "email" : "phone number"} and password. After that, we&apos;ll send a one-time verification code.
-                  </div>
+                      <p className="text-end text-[8px] text-gray-400 sm:text-sm">
+                  
+                  <button
+                    type="button"
+                    onClick={openForgotPassword}
+                    className="ml-1  text-red-600"
+                  >
+                   Forgot password?
+                  </button>
+                </p>    
 
                   <button
                     type="submit"
@@ -202,6 +209,18 @@ export default function LoginModal({
                       "Continue"
                     )}
                   </button>
+
+                    <p className="pt-0.5 text-center text-[13px] text-gray-400 sm:text-sm">
+                  Don&apos;t have an account?
+                  <button
+                    type="button"
+                    onClick={openRegister}
+                    className="text-red-600 ml-1"
+                  >
+                    Register
+                  </button>
+                </p>
+                    
 
                   <div className="text-center text-[13px] text-gray-400 sm:text-sm">or login with</div>
 
@@ -244,26 +263,7 @@ export default function LoginModal({
                   </div>
                 </form>
 
-                <p className="pt-0.5 text-center text-[13px] text-gray-400 sm:text-sm">
-                  Don&apos;t have an account?
-                  <button
-                    type="button"
-                    onClick={openRegister}
-                    className="text-red-600 ml-1"
-                  >
-                    Register
-                  </button>
-                </p>
-                <p className="text-center text-[13px] text-gray-400 sm:text-sm">
-                  Forgot your password?
-                  <button
-                    type="button"
-                    onClick={openForgotPassword}
-                    className="ml-1 text-red-600"
-                  >
-                    Reset it
-                  </button>
-                </p>
+              
               </div>
             </motion.div>
           </motion.div>

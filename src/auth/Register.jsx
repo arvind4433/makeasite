@@ -197,50 +197,9 @@ export default function RegisterModal({ isOpen, onClose, openLogin }) {
           <div className="space-y-2.5 p-3.5 sm:space-y-3 sm:p-4">
             {stage === "form" ? (
               <>
-                <div>
-                  <p className="mb-2.5 text-center text-[13px] text-gray-400 sm:text-sm">Sign up with</p>
+              
 
-                  <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-                    <button
-                      type="button"
-                      onClick={googleSignup}
-                      className="flex items-center justify-center gap-2 rounded-xl border px-3 py-2 text-sm"
-                    >
-                      <img
-                        src="https://cdn-icons-png.flaticon.com/512/281/281764.png"
-                        className="w-5"
-                      />
-                      Google
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={facebookSignup}
-                      className="flex items-center justify-center gap-2 rounded-xl border px-3 py-2 text-sm"
-                    >
-                      <img
-                        src="https://cdn-icons-png.flaticon.com/512/124/124010.png"
-                        className="w-5"
-                      />
-                      Facebook
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={linkedinSignup}
-                      className="flex items-center justify-center gap-2 rounded-xl border px-3 py-2 text-sm"
-                    >
-                      <img
-                        src="https://cdn-icons-png.flaticon.com/512/174/174857.png"
-                        className="w-5"
-                      />
-                      LinkedIn
-                    </button>
-                  </div>
-                </div>
-
-                <div className="text-center text-[13px] text-gray-400 sm:text-sm">or register with email and phone</div>
-
+              
                 <form onSubmit={handleRegister} className="grid grid-cols-1 gap-2.5 md:grid-cols-2 md:gap-3">
                   <input
                     type="text"
@@ -316,6 +275,48 @@ export default function RegisterModal({ isOpen, onClose, openLogin }) {
                     Login
                   </button>
                 </p>
+
+                  <div>
+                  <p className="mb-2.5 text-center text-[13px] text-gray-400 sm:text-sm">Sign up with</p>
+
+                  <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+                    <button
+                      type="button"
+                      onClick={googleSignup}
+                      className="flex items-center justify-center gap-2 rounded-xl border px-3 py-2 text-sm"
+                    >
+                      <img
+                        src="https://cdn-icons-png.flaticon.com/512/281/281764.png"
+                        className="w-5"
+                      />
+                      Google
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={facebookSignup}
+                      className="flex items-center justify-center gap-2 rounded-xl border px-3 py-2 text-sm"
+                    >
+                      <img
+                        src="https://cdn-icons-png.flaticon.com/512/124/124010.png"
+                        className="w-5"
+                      />
+                      Facebook
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={linkedinSignup}
+                      className="flex items-center justify-center gap-2 rounded-xl border px-3 py-2 text-sm"
+                    >
+                      <img
+                        src="https://cdn-icons-png.flaticon.com/512/174/174857.png"
+                        className="w-5"
+                      />
+                      LinkedIn
+                    </button>
+                  </div>
+                </div>
               </>
             ) : (
               <>
