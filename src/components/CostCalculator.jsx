@@ -59,9 +59,22 @@ const CostCalculator = () => {
                 <button type="button" onClick={() => { setSiteKind('dynamic'); setPages(Math.max(pages, 10)); setAuthTier(authTier === 'none' ? 'basic' : authTier); }} className={`rounded-[22px] border px-5 py-4 text-left ${siteKind === 'dynamic' ? 'border-red-500 bg-red-50 dark:bg-red-500/10' : ''}`} style={siteKind !== 'dynamic' ? { background: 'var(--bg-card-inner)', borderColor: 'var(--border)' } : {}}><div className="font-bold">Dynamic Website</div><div className="mt-1 text-sm" style={{ color: 'var(--text-secondary)' }}>Minimum INR 500 per page</div></button>
               </div>
 
-              <div>
-                <div className="mb-2 flex items-center justify-between"><span className="text-sm font-bold">Pages</span><span className="text-sm font-bold">{pages}</span></div>
-                <input type="range" min={1} max={40} value={pages} onChange={(event) => setPages(Number(event.target.value))} className="w-full accent-red-600" />
+              <div className="rounded-2xl border p-4" style={{ background: 'var(--bg-card-inner)', borderColor: 'var(--border)' }}>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <span className="text-sm font-bold">Standard Pages Included</span>
+                    <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                      {siteKind === 'static' ? 'Up to 8 responsive static pages' : 'Up to 10 dynamic pages with database support'}
+                    </p>
+                  </div>
+                  <span className="text-sm font-bold px-3 py-1 rounded-full bg-red-50 dark:bg-red-500/10 text-red-600 dark:text-red-400 border border-red-200 dark:border-red-500/20">
+                    {siteKind === 'static' ? '8 Pages' : '10 Pages'}
+                  </span>
+                </div>
+              </div>
+
+              <div className="rounded-2xl border border-amber-300 dark:border-amber-500/30 bg-amber-50/90 dark:bg-amber-500/10 p-4 text-xs sm:text-sm text-amber-900 dark:text-amber-200 leading-relaxed">
+                ⚡ <strong>Estimated Pricing:</strong> Yeh ek base estimate calculation hai. Baki agar aapko extra pages ya specific custom features chahiye, toh final price hum aapse discussion ke dauran final kar lenge.
               </div>
 
               <div className="grid gap-4 sm:grid-cols-2">

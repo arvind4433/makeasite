@@ -27,6 +27,7 @@ import PageLoader from './components/PageLoader';
 import CookieConsent from './components/CookieConsent';
 import OrderModal from './components/OrderModal';
 import CartDrawer from './components/CartDrawer';
+import AiAssistant from './components/AiAssistant';
 
 import { useEffect, useState, useContext } from 'react';
 
@@ -178,6 +179,7 @@ const AppInner = () => {
           </Routes>
         </main>
         {!hideFooter && <Footer />}
+        <AiAssistant />
         <CookieConsent />
         <Toaster position="top-center" richColors closeButton />
       </div>

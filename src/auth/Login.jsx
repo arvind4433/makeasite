@@ -8,7 +8,8 @@ import {
   EyeOff,
   Loader2,
   Mail,
-  Phone
+  Phone,
+  AlertCircle
 } from "lucide-react";
 import OTPModal from "../components/OTPModal";
 import { API_BASE_URL } from "../config/api";
@@ -35,31 +36,7 @@ export default function LoginModal({
 
   const handleLogin = async (e) => {
     e.preventDefault();
-
-    const identifier = mode === "email" ? email.trim() : phone;
-
-    if (!identifier) {
-      toast.error(mode === "email" ? "Email is required" : "Phone is required");
-      return;
-    }
-
-    if (!password) {
-      toast.error("Password is required");
-      return;
-    }
-
-    setSubmitting(true);
-    try {
-      const response = await login(
-        mode === "email"
-          ? { email: identifier, password }
-          : { phone: identifier, password }
-      );
-      setOtpIdentifier(response.identifier || identifier);
-      setShowOTP(true);
-    } finally {
-      setSubmitting(false);
-    }
+    toast.info("Manual login abhi allow nahi kiya gaya hai. Kripya Google ya Social Account se login karein!");
   };
 
   useEffect(() => {
@@ -121,130 +98,41 @@ export default function LoginModal({
                 </button>
               </div>
 
-              <div className="space-y-2.5 p-3.5 sm:space-y-3 sm:p-4">
-                <div className="flex rounded-xl bg-gray-100 p-1 dark:bg-white/5">
-                  <button
-                    type="button"
-                    onClick={() => setMode("email")}
-                    className={`flex-1 rounded-lg py-1.5 text-sm flex items-center justify-center gap-2 ${
-                      mode === "email" ? "bg-white dark:bg-black shadow" : ""
-                    }`}
-                  >
-                    <Mail size={16} />
-                    Email
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => setMode("phone")}
-                    className={`flex-1 rounded-lg py-1.5 text-sm flex items-center justify-center gap-2 ${
-                      mode === "phone" ? "bg-white dark:bg-black shadow" : ""
-                    }`}
-                  >
-                    <Phone size={16} />
-                    Phone
-                  </button>
+              <div className="space-y-4 p-4 sm:p-5">
+                {/* Notice Banner */}
+                <div className="rounded-2xl border border-amber-300 dark:border-amber-500/30 bg-amber-50 dark:bg-amber-500/10 p-3.5 text-xs sm:text-sm text-amber-900 dark:text-amber-200 leading-relaxed flex items-start gap-2.5 shadow-sm">
+                  <AlertCircle className="w-5 h-5 flex-shrink-0 text-amber-600 mt-0.5" />
+                  <div>
+                    <strong>Notice:</strong> Yeh manual login abhi allow nahi kiya gaya hai. Aap niche diye gaye <strong>Google / Social Account</strong> se directly login kar sakte hain!
+                  </div>
                 </div>
 
-                <form onSubmit={handleLogin} className="space-y-2 sm:space-y-2.5">
-                  {mode === "email" && (
-                    <input
-                      type="email"
-                      placeholder="email@example.com"
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      className="w-full rounded-xl border px-4 py-2"
-                    />
-                  )}
-
-                  {mode === "phone" && (
-                    <PhoneInput
-                      international
-                      defaultCountry="IN"
-                      value={phone}
-                      onChange={setPhone}
-                      className="w-full rounded-xl border px-4 py-2"
-                    />
-                  )}
-
-                  <div className="relative">
-                    <input
-                      type={showPassword ? "text" : "password"}
-                      placeholder="Password"
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      className="w-full rounded-xl border px-4 py-2 pr-12"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setShowPassword((current) => !current)}
-                      className="absolute right-4 top-1/2 -translate-y-1/2"
-                    >
-                      {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-                    </button>
-                  </div>
-
-                      <p className="text-end text-[8px] text-gray-400 sm:text-sm">
-                  
+                {/* Prominent Social Login Options */}
+                <div>
                   <button
                     type="button"
-                    onClick={openForgotPassword}
-                    className="ml-1  text-red-600"
+                    onClick={googleLogin}
+                    className="flex w-full items-center justify-center gap-3 rounded-2xl border-2 border-red-500/30 hover:border-red-500 px-4 py-3 text-sm font-bold shadow-sm transition-all hover:scale-[1.01]"
+                    style={{ background: 'var(--bg-card-inner)' }}
                   >
-                   Forgot password?
-                  </button>
-                </p>    
-
-                  <button
-                    type="submit"
-                    disabled={submitting}
-                    className="flex w-full items-center justify-center gap-2 rounded-xl bg-red-600 px-4 py-2 text-white"
-                  >
-                    {submitting ? (
-                      <>
-                        <Loader2 className="animate-spin" size={16} />
-                        Sending OTP
-                      </>
-                    ) : (
-                      "Continue"
-                    )}
+                    <img
+                      src="https://cdn-icons-png.flaticon.com/512/281/281764.png"
+                      className="w-5 h-5"
+                      alt="Google"
+                    />
+                    Continue with Google (Recommended)
                   </button>
 
-                    <p className="pt-0.5 text-center text-[13px] text-gray-400 sm:text-sm">
-                  Don&apos;t have an account?
-                  <button
-                    type="button"
-                    onClick={openRegister}
-                    className="text-red-600 ml-1"
-                  >
-                    Register
-                  </button>
-                </p>
-                    
-
-                  <div className="text-center text-[13px] text-gray-400 sm:text-sm">or login with</div>
-
-                  <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-3">
-                    <button
-                      type="button"
-                      onClick={googleLogin}
-                      className="flex items-center justify-center gap-2 rounded-xl border px-3 py-2 text-sm"
-                    >
-                      <img
-                        src="https://cdn-icons-png.flaticon.com/512/281/281764.png"
-                        className="w-5"
-                      />
-                      Google
-                    </button>
-
+                  <div className="grid grid-cols-2 gap-2.5 mt-2.5">
                     <button
                       type="button"
                       onClick={facebookLogin}
-                      className="flex items-center justify-center gap-2 rounded-xl border px-3 py-2 text-sm"
+                      className="flex items-center justify-center gap-2 rounded-xl border px-3 py-2 text-xs font-bold hover:bg-black/5 dark:hover:bg-white/5"
                     >
                       <img
                         src="https://cdn-icons-png.flaticon.com/512/124/124010.png"
-                        className="w-5"
+                        className="w-4 h-4"
+                        alt="Facebook"
                       />
                       Facebook
                     </button>
@@ -252,18 +140,70 @@ export default function LoginModal({
                     <button
                       type="button"
                       onClick={linkedinLogin}
-                      className="flex items-center justify-center gap-2 rounded-xl border px-3 py-2 text-sm"
+                      className="flex items-center justify-center gap-2 rounded-xl border px-3 py-2 text-xs font-bold hover:bg-black/5 dark:hover:bg-white/5"
                     >
                       <img
                         src="https://cdn-icons-png.flaticon.com/512/174/174857.png"
-                        className="w-5"
+                        className="w-4 h-4"
+                        alt="LinkedIn"
                       />
                       LinkedIn
                     </button>
                   </div>
-                </form>
+                </div>
 
-              
+                <div className="relative my-1">
+                  <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-[var(--border)]" /></div>
+                  <div className="relative flex justify-center text-[11px] uppercase tracking-wider"><span className="bg-[var(--bg-card)] px-2 text-slate-400 font-semibold">Or Manual Sign-In (Under Maintenance)</span></div>
+                </div>
+
+                <form onSubmit={handleLogin} className="space-y-3 opacity-75">
+                  <div>
+                    <label className="block text-xs font-bold mb-1 text-slate-600 dark:text-slate-400">Email Address</label>
+                    <input
+                      type="email"
+                      placeholder="you@example.com"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      className="w-full rounded-xl border px-4 py-2 text-sm outline-none"
+                    />
+                  </div>
+
+                  <div className="relative">
+                    <input
+                      type={showPassword ? "text" : "password"}
+                      placeholder="Password"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      className="w-full rounded-xl border px-4 py-2 pr-12 text-sm outline-none"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword((current) => !current)}
+                      className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400"
+                    >
+                      {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                    </button>
+                  </div>
+
+                  <button
+                    type="submit"
+                    className="flex w-full items-center justify-center gap-2 rounded-xl bg-slate-700 hover:bg-slate-800 px-4 py-2 text-white text-sm font-semibold"
+                  >
+                    Continue
+                  </button>
+
+                  <p className="text-center text-xs text-gray-400">
+                    Don&apos;t have an account?
+                    <button
+                      type="button"
+                      onClick={openRegister}
+                      className="text-red-600 font-bold ml-1"
+                    >
+                      Register
+                    </button>
+                  </p>
+                </form>
               </div>
             </motion.div>
           </motion.div>

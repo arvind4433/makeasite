@@ -62,20 +62,40 @@ export const AuthProvider = ({ children }) => {
         const stored = localStorage.getItem('userInfo');
         if (stored) {
             try {
-                setUser(JSON.parse(stored));
+                const parsed = JSON.parse(stored);
+                const MAX_INACTIVITY_MS = 3 * 24 * 60 * 60 * 1000; // 3 days
+                const lastOnline = parsed.lastOnline || parsed.loginTimestamp || Date.now();
+                const isExpired = Date.now() - lastOnline > MAX_INACTIVITY_MS;
+
+                if (isExpired) {
+                    localStorage.removeItem('userInfo');
+                    setUser(null);
+                    dispatch(clearCredentials());
+                } else {
+                    parsed.lastOnline = Date.now();
+                    localStorage.setItem('userInfo', JSON.stringify(parsed));
+                    setUser(parsed);
+                    dispatch(setCredentials(parsed));
+                }
             } catch {
                 localStorage.removeItem('userInfo');
                 setUser(null);
+                dispatch(clearCredentials());
             }
         }
         setLoading(false);
-    }, []);
+    }, [dispatch]);
 
     const hydrateUser = (data) => {
         if (!data?.token) return;
-        setUser(data);
-        persist(data);
-        dispatch(setCredentials(data));
+        const userWithMeta = {
+            ...data,
+            lastOnline: Date.now(),
+            loginTimestamp: data.loginTimestamp || Date.now()
+        };
+        setUser(userWithMeta);
+        persist(userWithMeta);
+        dispatch(setCredentials(userWithMeta));
     };
 
     const login = async (credentials) => {

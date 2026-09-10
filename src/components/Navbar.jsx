@@ -18,7 +18,7 @@ const navLinks = [
   { name: "Contact", path: "/contact" }
 ];
 
-const supportThread = { id: 'general', label: 'Live Support', orderId: null, unreadCount: 0, lastMessage: 'Need help? Start a conversation.' };
+const supportThread = { id: 'general', label: 'Messages & Updates', orderId: null, unreadCount: 0, lastMessage: 'Need help? Start a conversation.' };
 
 const Avatar = ({ user }) => {
   const initials = user?.name ? user.name.split(" ").map((n) => n[0]).join("").slice(0, 2).toUpperCase() : "?";

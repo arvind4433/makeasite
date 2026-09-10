@@ -30,7 +30,7 @@ const useCounter = (target, duration = 1800) => {
 };
 
 const stats = [
-    { icon: Trophy, value: '120+', label: 'Projects Delivered' },
+    { icon: Trophy, value: '1000+', label: 'Projects Delivered' },
     { icon: Users, value: '80+', label: 'Happy Clients' },
     { icon: CalendarCheck, value: '5+', label: 'Years Experience' },
     { icon: ThumbsUp, value: '98%', label: 'Client Satisfaction' },

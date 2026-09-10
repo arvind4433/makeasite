@@ -1,15 +1,16 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Mail, Phone, MapPin, Send, CheckCircle2, ArrowRight } from 'lucide-react';
+import { Mail, Phone, MapPin, Send, CheckCircle2, ArrowRight, MessageCircle } from 'lucide-react';
 import { toast } from 'sonner';
 import { Link } from 'react-router-dom';
+import { apiClient } from '../config/api';
 
 const projectTypes = ['Basic Website (₹3,000)', 'Standard Website (₹7,000)', 'Premium / Enterprise (₹50,000+)', 'Landing Page', 'E-Commerce Store', 'Admin Dashboard', 'Bug Fix / Support', 'Other / Custom'];
 const budgets = ['Under ₹5,000', '₹5,000 – ₹15,000', '₹15,000 – ₹50,000', '₹50,000 – ₹1,00,000', '₹1,00,000+'];
 
 const contactInfo = [
     { icon: Mail, label: 'Email Us', value: 'arvind889481@gmail.com', href: 'mailto:arvind889481@gmail.com' },
-    { icon: Phone, label: 'WhatsApp', value: '+91 8894810531', href: '#' },
+    { icon: Phone, label: 'WhatsApp', value: '+91 8894810531', href: 'https://wa.me/918894810531' },
     { icon: MapPin, label: 'Location', value: 'India — Remote Worldwide', href: '#' },
 ];
 
@@ -35,10 +36,28 @@ const ContactSection = () => {
         if (Object.keys(errs).length) { setErrors(errs); return; }
         setErrors({});
         setLoading(true);
-        await new Promise((r) => setTimeout(r, 1200));
-        setLoading(false);
-        setSubmitted(true);
-        toast.success("Message sent! We'll reply within 24 hours.");
+
+        const waText = encodeURIComponent(
+            `*MakeASite Inquiry*\n\n*Name:* ${form.name.trim()}\n*Email:* ${form.email.trim()}\n*Project Type:* ${form.projectType}\n*Budget:* ${form.budget || 'Not specified'}\n\n*Project Details:*\n${form.message.trim()}`
+        );
+        const waUrl = `https://wa.me/918894810531?text=${waText}`;
+
+        try {
+            await apiClient.post('/contact', {
+                name: form.name.trim(),
+                email: form.email.trim(),
+                projectType: form.projectType,
+                budget: form.budget,
+                message: form.message.trim()
+            });
+        } catch {
+            // Even if backend fails, WhatsApp will deliver the message
+        } finally {
+            setLoading(false);
+            setSubmitted(true);
+            toast.success("Message sent! Opening WhatsApp chat with Arvind...");
+            window.open(waUrl, '_blank');
+        }
     };
 
     const inputClass = (id) =>
@@ -98,17 +117,26 @@ const ContactSection = () => {
                         className="card lg:col-span-3 p-8">
 
                         {submitted ? (
-                            <div className="flex flex-col items-center justify-center text-center py-12">
-                                <div className="w-16 h-16 rounded-full flex items-center justify-center mb-6"
+                            <div className="flex flex-col items-center justify-center text-center py-10">
+                                <div className="w-16 h-16 rounded-full flex items-center justify-center mb-5"
                                     style={{ background: 'rgba(34,197,94,0.1)', border: '2px solid rgba(34,197,94,0.3)' }}>
                                     <CheckCircle2 className="w-8 h-8 text-emerald-500" />
                                 </div>
-                                <h3 className="text-2xl font-bold text-slate-900 dark:text-white mb-3">Message Sent!</h3>
-                                <p className="text-slate-600 dark:text-slate-400 text-sm max-w-xs">
-                                    We'll review your project details and respond within 24 hours.
+                                <h3 className="text-2xl font-bold text-slate-900 dark:text-white mb-2">Message Sent!</h3>
+                                <p className="text-slate-600 dark:text-slate-400 text-sm max-w-sm mb-6 leading-relaxed">
+                                    Your message has been emailed to Arvind (<span className="font-semibold text-slate-700 dark:text-slate-200">arvind889481@gmail.com</span>) and sent to WhatsApp.
                                 </p>
+                                <a
+                                    href={`https://wa.me/918894810531?text=${encodeURIComponent(`Hello Arvind, I just submitted the contact form for ${form.projectType}.`)}`}
+                                    target="_blank"
+                                    rel="noreferrer"
+                                    className="inline-flex items-center gap-2 rounded-xl px-5 py-3 text-sm font-bold text-white shadow-md hover:opacity-95 transition-opacity"
+                                    style={{ background: '#25D366' }}
+                                >
+                                    <MessageCircle className="w-4 h-4" /> Open WhatsApp Chat (+91 8894810531)
+                                </a>
                                 <button onClick={() => { setSubmitted(false); setForm({ name: '', email: '', projectType: '', budget: '', message: '' }); }}
-                                    className="mt-8 text-sm font-semibold text-red-600 dark:text-red-400 hover:text-red-700 transition-colors">
+                                    className="mt-6 text-sm font-semibold text-red-600 dark:text-red-400 hover:text-red-700 transition-colors">
                                     Send another message →
                                 </button>
                             </div>

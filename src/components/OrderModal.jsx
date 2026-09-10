@@ -114,7 +114,6 @@ const OrderModal = () => {
       if (!form.title.trim()) nextErrors.title = 'Project title is required';
       if (!form.websiteType) nextErrors.websiteType = 'Please select a website type';
       if (!form.businessCategory.trim()) nextErrors.businessCategory = 'Business category is required';
-      if (!form.pages || form.pages < 1) nextErrors.pages = 'At least one page is required';
     }
     if (step === 2) {
       if (!form.description.trim() || form.description.trim().length < 20) nextErrors.description = 'Please add at least 20 characters';
@@ -134,8 +133,8 @@ const OrderModal = () => {
 
   const handleSubmit = async () => {
     if (!validateStep()) return;
-    if (!user?.emailVerified || !user?.phoneVerified) {
-      toast.error('Please verify your email and phone in your profile before creating an order.');
+    if (!user?.emailVerified) {
+      toast.error('Please verify your email in your profile before creating an order.');
       return;
     }
     setSubmitting(true);
@@ -224,7 +223,15 @@ const OrderModal = () => {
                       <label className="block space-y-2"><span className="text-sm font-bold">Project title</span><input value={form.title} onChange={setField('title')} className={fieldClasses(errors.title)} style={inputStyle(errors.title)} /></label>
                       <div className="grid gap-4 sm:grid-cols-2">
                         <label className="block space-y-2"><span className="text-sm font-bold">Website type</span><select value={form.websiteType} onChange={setField('websiteType')} className={fieldClasses(errors.websiteType)} style={inputStyle(errors.websiteType)}><option value="">Select type</option>{WEBSITE_TYPES.map((item) => <option key={item} value={item}>{item}</option>)}</select></label>
-                        <label className="block space-y-2"><span className="text-sm font-bold">Pages</span><input type="number" min="1" value={form.pages} onChange={setField('pages')} className={fieldClasses(errors.pages)} style={inputStyle(errors.pages)} /></label>
+                        <div className="space-y-2">
+                          <span className="text-sm font-bold">Standard Pages Included</span>
+                          <div className="rounded-xl border px-4 py-3 text-sm font-bold" style={{ background: 'var(--bg-card-inner)', borderColor: 'var(--border)' }}>
+                            {form.pages || 8} Pages (Base Plan)
+                          </div>
+                        </div>
+                      </div>
+                      <div className="rounded-xl border border-amber-200 dark:border-amber-500/20 bg-amber-50/80 dark:bg-amber-500/10 px-3.5 py-2.5 text-xs text-amber-800 dark:text-amber-300">
+                        ⚡ <strong>Estimate Notice:</strong> Yeh ek base estimated price calculation hai. Baki agar aapko extra pages ya specific features chahiye, toh final price hum aapse discussion ke dauran set kar lenge.
                       </div>
                       <div className="grid gap-4 sm:grid-cols-2">
                         <label className="block space-y-2"><span className="text-sm font-bold">Project category</span><input value={form.businessCategory} onChange={setField('businessCategory')} className={fieldClasses(errors.businessCategory)} style={inputStyle(errors.businessCategory)} /></label>

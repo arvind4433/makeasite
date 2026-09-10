@@ -4,7 +4,7 @@ import { ArrowRight, Star, CheckCircle2, Zap, Shield } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 /* ═══════════════════ Static data ═══════════════════ */
-const stats = [{ value: '120+', label: 'Projects' }, { value: '98%', label: 'Satisfaction' }, { value: '5+', label: 'Years' }];
+const stats = [{ value: '1000+', label: 'Projects' }, { value: '98%', label: 'Satisfaction' }, { value: '5+', label: 'Years' }];
 const trusts = [{ icon: CheckCircle2, text: 'Full-Stack' }, { icon: Zap, text: 'Fast Turnaround' }, { icon: Shield, text: 'Secure & Scalable' }];
 const chartBars = [38, 52, 44, 70, 58, 88, 72, 60, 82, 95, 68, 76];
 const navItems = ['Dashboard', 'Analytics', 'Orders', 'Settings'];
