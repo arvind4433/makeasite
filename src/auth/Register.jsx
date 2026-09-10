@@ -26,7 +26,7 @@ const OtpRow = ({
           {label}
         </div>
         <div className="mt-1 text-xs" style={{ color: 'var(--text-secondary)' }}>
-          {verified ? "Verified successfully" : "Enter the 6-digit OTP and click verify."}
+          {verified ? "Verified successfully" : "Enter the verification OTP and click verify."}
         </div>
       </div>
       <span className={`inline-flex items-center gap-1 rounded-full px-3 py-1 text-xs font-bold ${verified ? "bg-emerald-100 text-emerald-700" : "bg-amber-100 text-amber-700"}`}>
@@ -50,7 +50,7 @@ const OtpRow = ({
         <button
           type="button"
           onClick={() => onVerify(channel)}
-          disabled={disabled || verifying || value.length !== 6}
+          disabled={disabled || verifying || value.length < 5}
           className="rounded-xl bg-red-600 px-5 py-3 font-semibold text-white disabled:opacity-60"
         >
           {verifying ? "Verifying..." : "Verify"}

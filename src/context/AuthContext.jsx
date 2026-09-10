@@ -222,6 +222,7 @@ export const AuthProvider = ({ children }) => {
     };
 
     const logout = () => {
+        apiClient.post('/auth/logout').catch(() => {});
         setUser(null);
         localStorage.removeItem('userInfo');
         localStorage.removeItem('token');

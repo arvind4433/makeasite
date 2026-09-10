@@ -47,7 +47,7 @@ export default function OTPModal({
 
   const handleVerify = async () => {
     const code = otp.join("");
-    if (code.length < 6) return;
+    if (code.length < 5) return;
 
     setLoading(true);
     try {
@@ -101,7 +101,7 @@ export default function OTPModal({
             ))}
           </div>
 
-          <button type="button" onClick={handleVerify} disabled={loading || otp.join("").length < 6} className="w-full p-3 bg-red-600 hover:bg-red-700 text-white rounded-xl flex justify-center items-center font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+          <button type="button" onClick={handleVerify} disabled={loading || otp.join("").length < 5} className="w-full p-3 bg-red-600 hover:bg-red-700 text-white rounded-xl flex justify-center items-center font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
             {loading ? "Verifying..." : "Verify"}
           </button>
 
