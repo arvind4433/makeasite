@@ -73,8 +73,8 @@ const CostCalculator = () => {
                 </div>
               </div>
 
-              <div className="rounded-2xl border border-amber-300 dark:border-amber-500/30 bg-amber-50/90 dark:bg-amber-500/10 p-4 text-xs sm:text-sm text-amber-900 dark:text-amber-200 leading-relaxed">
-                ⚡ <strong>Estimated Pricing:</strong> Yeh ek base estimate calculation hai. Baki agar aapko extra pages ya specific custom features chahiye, toh final price hum aapse discussion ke dauran final kar lenge.
+              <div className="rounded-xl border px-4 py-2.5 text-xs text-slate-500 dark:text-slate-400" style={{ background: 'var(--bg-card-inner)', borderColor: 'var(--border)' }}>
+                * Base estimate. Final price is customized based on your exact pages and features.
               </div>
 
               <div className="grid gap-4 sm:grid-cols-2">

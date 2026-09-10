@@ -1,16 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { 
-  Bot, 
-  X, 
-  Send, 
-  Sparkles, 
-  MessageCircle, 
-  RotateCcw, 
-  Key, 
-  ExternalLink,
-  ChevronDown
-} from 'lucide-react';
+import { X, Send, RotateCcw } from 'lucide-react';
+import Logo from './Logo';
 
 const SYSTEM_PROMPT = `
 You are a warm, humble, and friendly human team consultant at MakeASite, working directly alongside Arvind Singh (the founder).
@@ -39,34 +30,27 @@ Human Escalation & Unknown Questions:
   "Is cheez ke baare me aap hamara Contact Form bhar dein ya seedhe Arvind ji ko WhatsApp (+91 8894810531) par message kar lijiye, hum aapse direct call ya chat par baat karke deal aur requirements finalize kar lenge!"
 `;
 
-const DEFAULT_SUGGESTIONS = [
-  "💰 Website ka estimate price kitna hoga?",
-  "⚡ Delivery kitne dino me ho jayegi?",
-  "💬 Arvind ji se direct WhatsApp par baat karni hai",
-  "📝 Contact form kaise submit karein?"
-];
-
 // Fallback smart responder if Gemini API key is not yet set by user
 const smartFallbackReply = (text) => {
   const q = text.toLowerCase();
 
   if (q.includes('price') || q.includes('cost') || q.includes('rate') || q.includes('kitna') || q.includes('paise') || q.includes('pese') || q.includes('charges') || q.includes('kharcha')) {
-    return `Haanji! MakeASite par hum best quality websites bahut hi genuine aur pocket-friendly rates me deliver karte hain. 🚀\n\n• **Static Website:** ~₹3,000 se ₹5,000 tak (7-8 pages included)\n• **Dynamic Website:** ~₹5,000 se ₹10,000 tak (Database & Login system included)\n• **Custom Web App / Dashboard:** ₹15,000+\n\n*Yeh ek base estimate hai.* Agar aapko extra pages ya specific custom features chahiye toh hum direct baat karke final budget fix kar lenge! Aap chahein toh niche diye button se Arvind ji ko WhatsApp (+91 8894810531) par ping kar sakte hain.`;
+    return `Haanji! MakeASite par hum best quality websites bahut hi genuine aur pocket-friendly rates me deliver karte hain. 🚀\n\n• Static Website: ~₹3,000 se ₹5,000 tak (7-8 pages included)\n• Dynamic Website: ~₹5,000 se ₹10,000 tak (Database & Login included)\n• Custom Web App / Dashboard: ₹15,000+\n\n*Yeh ek base estimate hai.* Agar aapko extra pages ya specific features chahiye toh hum direct baat karke final budget fix kar lenge! Arvind ji se direct WhatsApp (+91 8894810531) par bhi baat kar sakte hain.`;
   }
 
   if (q.includes('deliver') || q.includes('time') || q.includes('din') || q.includes('kab tak') || q.includes('fast') || q.includes('urg')) {
-    return `Hum standard projects **3 se 7 dino** ke andar complete karke live kar dete hain! ⚡\nAgar aapko emergency ya jaldi chahiye, toh express fast-track delivery option bhi available hai. Hamare saath 1000+ projects ab tak successfully deliver ho chuke hain!`;
+    return `Hum standard projects 3 se 7 dino ke andar complete karke live kar dete hain! ⚡\nAgar urgent chahiye, toh express fast-track delivery option bhi available hai. Hamare saath 1000+ projects ab tak successfully deliver ho chuke hain!`;
   }
 
   if (q.includes('whatsapp') || q.includes('phone') || q.includes('number') || q.includes('call') || q.includes('contact') || q.includes('arvind') || q.includes('baat')) {
-    return `Aap direct Arvind ji se connect kar sakte hain, hum turant reply karte hain:\n\n📱 **WhatsApp:** +91 8894810531\n✉️ **Email:** arvind889481@gmail.com\n\nNiche WhatsApp button par click karke aap direct chat shuru kar sakte hain!`;
+    return `Aap direct Arvind ji se WhatsApp par connect kar sakte hain:\n\n📱 WhatsApp: +91 8894810531\n✉️ Email: arvind889481@gmail.com\n\nAap WhatsApp par message karke direct chat start kar sakte hain!`;
   }
 
   if (q.includes('form') || q.includes('inquiry') || q.includes('quote') || q.includes('message')) {
-    return `Aap hamari website ke **Contact Page** par jakar form fill kar sakte hain. Form fill karte hi aapka message Arvind ji ke WhatsApp aur Email dono par turant pahunch jayega aur hum aapse jaldi hi rabta karenge!`;
+    return `Aap hamari website ke Contact Page par jakar form fill kar sakte hain. Form fill karte hi aapka message Arvind ji ke WhatsApp aur Email dono par turant pahunch jayega!`;
   }
 
-  return `Haanji bilkul! MakeASite par humne 1000+ websites deliver ki hain. Aapki requirement ke according hum modern, ultra-fast aur mobile responsive website create kar denge.\n\nAgar aapko custom feature chahiye ya specific requirements discuss karni hain, toh aap **Contact Form** fill kar dein ya Arvind ji ko direct **WhatsApp (+91 8894810531)** par message karein, hum milkar sab kuch finalize kar lenge! 🙏`;
+  return `Haanji bilkul! MakeASite par humne 1000+ websites deliver ki hain. Aapki requirement ke according hum modern, ultra-fast aur mobile responsive website create kar denge.\n\nAgar aapko custom feature chahiye ya specific requirements discuss karni hain, toh aap Contact Form fill kar dein ya Arvind ji ko direct WhatsApp (+91 8894810531) par message karein! 🙏`;
 };
 
 export default function AiAssistant() {
@@ -74,14 +58,12 @@ export default function AiAssistant() {
   const [messages, setMessages] = useState([
     {
       role: 'assistant',
-      text: 'Namaste! 🙏 Welcome to MakeASite. Main MakeASite AI Assistant hoon. Main aapki website ideas, pricing estimates, delivery timeline aur custom requirements me help kar sakta hoon. Aap mujhse kuch bhi pooch sakte hain!'
+      text: 'Hello! How can I help you today?'
     }
   ]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
-  const [apiKey, setApiKey] = useState(() => localStorage.getItem('makeasite_gemini_key') || import.meta.env.VITE_GEMINI_API_KEY || '');
-  const [showKeyModal, setShowKeyModal] = useState(false);
-  const [keyInput, setKeyInput] = useState('');
+  const apiKey = localStorage.getItem('makeasite_gemini_key') || import.meta.env.VITE_GEMINI_API_KEY || '';
   const messagesEndRef = useRef(null);
 
   useEffect(() => {
@@ -148,54 +130,33 @@ export default function AiAssistant() {
     }, 600);
   };
 
-  const handleSaveKey = () => {
-    if (keyInput.trim()) {
-      setApiKey(keyInput.trim());
-      localStorage.setItem('makeasite_gemini_key', keyInput.trim());
-    }
-    setShowKeyModal(false);
-  };
-
   const handleClearChat = () => {
     setMessages([
       {
         role: 'assistant',
-        text: 'Namaste! 🙏 Welcome to MakeASite. Main MakeASite AI Assistant hoon. Main aapki website ideas, pricing estimates aur requirements me help kar sakta hoon. Poochiye aapka sawaal!'
+        text: 'Hello! How can I help you today?'
       }
     ]);
   };
 
   return (
     <>
-      {/* Floating Action Button */}
+      {/* Floating Action Button (Styled like MakeASite Logo) */}
       <div className="fixed bottom-6 right-6 z-50 flex flex-col items-end pointer-events-auto">
-        {!isOpen && (
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="mb-2 hidden sm:flex items-center gap-2 rounded-full px-3.5 py-1.5 text-xs font-bold text-white shadow-lg backdrop-blur-md"
-            style={{ background: 'linear-gradient(135deg, #dc2626, #ea580c)' }}
-          >
-            <Sparkles size={13} className="animate-spin" style={{ animationDuration: '3s' }} />
-            Need help? Chat with AI
-          </motion.div>
-        )}
-
         <button
           type="button"
           onClick={() => setIsOpen((prev) => !prev)}
-          className="relative flex h-14 w-14 items-center justify-center rounded-full shadow-2xl transition-all duration-300 hover:scale-105 active:scale-95 text-white"
-          style={{ background: 'linear-gradient(135deg, #dc2626 0%, #f97316 100%)' }}
+          className="relative flex h-14 w-14 items-center justify-center rounded-full border-2 border-red-500/40 bg-slate-950/95 shadow-2xl transition-all duration-300 hover:scale-105 active:scale-95 text-white backdrop-blur-md"
           aria-label="Toggle MakeASite AI Assistant"
         >
           {isOpen ? (
-            <X size={26} />
+            <X size={24} className="text-white" />
           ) : (
             <>
-              <Bot size={28} />
-              <span className="absolute -top-1 -right-1 flex h-4 w-4">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                <span className="relative inline-flex rounded-full h-4 w-4 bg-emerald-500 border-2 border-white"></span>
+              <Logo size={36} showText={false} />
+              <span className="absolute -top-0.5 -right-0.5 flex h-3.5 w-3.5">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-3.5 w-3.5 bg-red-500 border-2 border-slate-950"></span>
               </span>
             </>
           )}
@@ -210,38 +171,30 @@ export default function AiAssistant() {
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 24, scale: 0.94 }}
             transition={{ type: 'spring', damping: 25, stiffness: 280 }}
-            className="fixed bottom-24 right-4 sm:right-6 z-50 w-[calc(100vw-32px)] sm:w-[410px] h-[560px] max-h-[82vh] rounded-[28px] border shadow-2xl flex flex-col overflow-hidden backdrop-blur-xl"
+            className="fixed bottom-24 right-4 sm:right-6 z-50 w-[calc(100vw-32px)] sm:w-[380px] h-[520px] max-h-[80vh] rounded-[28px] border shadow-2xl flex flex-col overflow-hidden backdrop-blur-xl"
             style={{
               background: 'var(--bg-card)',
               borderColor: 'var(--border-strong)',
-              boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)'
+              boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.35)'
             }}
           >
-            {/* Header */}
+            {/* Clean Header */}
             <div
-              className="px-5 py-4 border-b flex items-center justify-between"
+              className="px-5 py-3.5 border-b flex items-center justify-between"
               style={{
                 borderColor: 'var(--border)',
-                background: 'linear-gradient(135deg, rgba(220,38,38,0.08), rgba(249,115,22,0.05))'
+                background: 'var(--bg-card-inner)'
               }}
             >
               <div className="flex items-center gap-3">
-                <div
-                  className="h-10 w-10 rounded-2xl flex items-center justify-center text-white shadow-md"
-                  style={{ background: 'linear-gradient(135deg, #dc2626, #f97316)' }}
-                >
-                  <Bot size={22} />
+                <div className="h-9 w-9 rounded-2xl flex items-center justify-center border border-red-500/30 bg-slate-950 shadow-sm flex-shrink-0">
+                  <Logo size={24} showText={false} />
                 </div>
                 <div>
-                  <div className="flex items-center gap-1.5">
-                    <h3 className="font-extrabold text-sm sm:text-base leading-none">MakeASite AI</h3>
-                    <span className="text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full bg-red-100 dark:bg-red-500/20 text-red-600 dark:text-red-400">
-                      Assistant
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-1.5 mt-1">
+                  <h3 className="font-extrabold text-sm leading-tight">MakeASite AI</h3>
+                  <div className="flex items-center gap-1.5 mt-0.5">
                     <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse"></span>
-                    <span className="text-xs text-slate-500 dark:text-slate-400">Always Online & Ready</span>
+                    <span className="text-[11px] text-slate-500 dark:text-slate-400">Online</span>
                   </div>
                 </div>
               </div>
@@ -249,59 +202,25 @@ export default function AiAssistant() {
               <div className="flex items-center gap-1">
                 <button
                   type="button"
-                  title="Configure Gemini API Key"
-                  onClick={() => {
-                    setKeyInput(apiKey);
-                    setShowKeyModal(true);
-                  }}
-                  className="p-2 rounded-xl text-slate-500 hover:text-slate-800 dark:hover:text-white hover:bg-black/5 dark:hover:bg-white/5 transition-colors"
-                >
-                  <Key size={16} />
-                </button>
-                <button
-                  type="button"
                   title="Reset conversation"
                   onClick={handleClearChat}
-                  className="p-2 rounded-xl text-slate-500 hover:text-slate-800 dark:hover:text-white hover:bg-black/5 dark:hover:bg-white/5 transition-colors"
+                  className="p-2 rounded-xl text-slate-400 hover:text-slate-800 dark:hover:text-white hover:bg-black/5 dark:hover:bg-white/5 transition-colors"
                 >
-                  <RotateCcw size={16} />
+                  <RotateCcw size={15} />
                 </button>
                 <button
                   type="button"
-                  title="Minimize"
+                  title="Close"
                   onClick={() => setIsOpen(false)}
-                  className="p-2 rounded-xl text-slate-500 hover:text-slate-800 dark:hover:text-white hover:bg-black/5 dark:hover:bg-white/5 transition-colors"
+                  className="p-2 rounded-xl text-slate-400 hover:text-slate-800 dark:hover:text-white hover:bg-black/5 dark:hover:bg-white/5 transition-colors"
                 >
-                  <ChevronDown size={18} />
+                  <X size={18} />
                 </button>
               </div>
             </div>
 
-            {/* Quick Actions Bar */}
-            <div
-              className="px-4 py-2 border-b overflow-x-auto flex items-center gap-2 text-xs no-scrollbar"
-              style={{ borderColor: 'var(--border)', background: 'var(--bg-card-inner)' }}
-            >
-              <a
-                href="https://wa.me/918894810531"
-                target="_blank"
-                rel="noreferrer"
-                className="flex items-center gap-1.5 px-3 py-1 rounded-full font-bold text-white whitespace-nowrap shadow-sm hover:opacity-90"
-                style={{ background: '#25D366' }}
-              >
-                <MessageCircle size={13} /> WhatsApp
-              </a>
-              <a
-                href="/contact"
-                className="flex items-center gap-1 px-3 py-1 rounded-full font-semibold border whitespace-nowrap hover:bg-black/5 dark:hover:bg-white/5"
-                style={{ borderColor: 'var(--border)' }}
-              >
-                Contact Form <ExternalLink size={11} />
-              </a>
-            </div>
-
             {/* Messages Scroll Area */}
-            <div className="flex-1 p-4 space-y-3 overflow-y-auto" style={{ background: 'var(--bg-card)' }}>
+            <div className="flex-1 p-4 space-y-3.5 overflow-y-auto" style={{ background: 'var(--bg-card)' }}>
               {messages.map((m, idx) => {
                 const isAssistant = m.role === 'assistant';
                 return (
@@ -310,15 +229,12 @@ export default function AiAssistant() {
                     className={`flex items-start gap-2.5 ${isAssistant ? 'justify-start' : 'justify-end'}`}
                   >
                     {isAssistant && (
-                      <div
-                        className="h-7 w-7 rounded-full flex items-center justify-center text-white flex-shrink-0 mt-0.5 text-xs font-bold shadow"
-                        style={{ background: 'linear-gradient(135deg, #dc2626, #f97316)' }}
-                      >
-                        AI
+                      <div className="h-7 w-7 rounded-full flex items-center justify-center border border-red-500/30 bg-slate-950 flex-shrink-0 mt-0.5 shadow">
+                        <Logo size={18} showText={false} />
                       </div>
                     )}
                     <div
-                      className={`max-w-[84%] rounded-2xl px-4 py-3 text-sm leading-relaxed whitespace-pre-line shadow-sm ${
+                      className={`max-w-[82%] rounded-2xl px-4 py-2.5 text-sm leading-relaxed whitespace-pre-line shadow-sm ${
                         isAssistant
                           ? 'border'
                           : 'text-white'
@@ -337,11 +253,8 @@ export default function AiAssistant() {
 
               {loading && (
                 <div className="flex items-start gap-2.5 justify-start">
-                  <div
-                    className="h-7 w-7 rounded-full flex items-center justify-center text-white flex-shrink-0 mt-0.5 text-xs font-bold"
-                    style={{ background: 'linear-gradient(135deg, #dc2626, #f97316)' }}
-                  >
-                    AI
+                  <div className="h-7 w-7 rounded-full flex items-center justify-center border border-red-500/30 bg-slate-950 flex-shrink-0 mt-0.5 shadow">
+                    <Logo size={18} showText={false} />
                   </div>
                   <div
                     className="rounded-2xl px-4 py-3 border flex items-center gap-1.5"
@@ -354,111 +267,40 @@ export default function AiAssistant() {
                 </div>
               )}
 
-              {/* Suggestions Chips (shown when few messages) */}
-              {messages.length <= 2 && !loading && (
-                <div className="pt-2 space-y-1.5">
-                  <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400 block px-1">
-                    Suggested Questions
-                  </span>
-                  <div className="flex flex-wrap gap-1.5">
-                    {DEFAULT_SUGGESTIONS.map((s, i) => (
-                      <button
-                        key={i}
-                        type="button"
-                        onClick={() => handleSendMessage(s)}
-                        className="text-xs font-medium text-left px-3 py-1.5 rounded-xl border hover:border-red-500/40 hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors"
-                        style={{ background: 'var(--bg-card-inner)', borderColor: 'var(--border)' }}
-                      >
-                        {s}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              )}
-
               <div ref={messagesEndRef} />
             </div>
 
-            {/* Input Form */}
-            <form
-              onSubmit={(e) => {
-                e.preventDefault();
-                handleSendMessage();
-              }}
-              className="p-3 border-t flex items-center gap-2"
-              style={{ borderColor: 'var(--border)', background: 'var(--bg-card-inner)' }}
-            >
-              <input
-                type="text"
-                value={input}
-                onChange={(e) => setInput(e.target.value)}
-                placeholder="Ask about website, pricing, features..."
-                className="flex-1 rounded-2xl px-4 py-2.5 text-sm outline-none border focus:border-red-500 transition-colors"
-                style={{ background: 'var(--bg-card)', borderColor: 'var(--border)' }}
-              />
-              <button
-                type="submit"
-                disabled={!input.trim() || loading}
-                className="h-10 w-10 rounded-2xl flex items-center justify-center text-white disabled:opacity-40 transition-opacity shadow-md flex-shrink-0"
-                style={{ background: 'linear-gradient(135deg, #dc2626, #f97316)' }}
-                aria-label="Send message"
+            {/* Bottom Searchbar / Message Input (App Chat Style) */}
+            <div className="p-3 border-t bg-[var(--bg-card)]" style={{ borderColor: 'var(--border)' }}>
+              <form
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  handleSendMessage();
+                }}
+                className="flex items-center gap-2 rounded-2xl border px-3.5 py-2 bg-[var(--bg-card-inner)] shadow-sm focus-within:border-red-500/60 transition-colors"
+                style={{ borderColor: 'var(--border)' }}
               >
-                <Send size={16} />
-              </button>
-            </form>
+                <input
+                  type="text"
+                  value={input}
+                  onChange={(e) => setInput(e.target.value)}
+                  placeholder="Type your message..."
+                  className="flex-1 bg-transparent text-sm outline-none placeholder:text-slate-400"
+                />
+                <button
+                  type="submit"
+                  disabled={!input.trim() || loading}
+                  className="flex h-8 w-8 items-center justify-center rounded-xl text-white disabled:opacity-40 transition-all hover:scale-105 active:scale-95 flex-shrink-0 shadow"
+                  style={{ background: 'linear-gradient(135deg, #dc2626, #ea580c)' }}
+                  aria-label="Send message"
+                >
+                  <Send size={15} />
+                </button>
+              </form>
+            </div>
           </motion.div>
         )}
       </AnimatePresence>
-
-      {/* Gemini API Key Modal */}
-      {showKeyModal && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 p-4">
-          <motion.div
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            className="w-full max-w-md rounded-3xl p-6 border shadow-2xl"
-            style={{ background: 'var(--bg-card)', borderColor: 'var(--border-strong)' }}
-          >
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center gap-2">
-                <Key className="text-red-500" size={20} />
-                <h3 className="font-extrabold text-lg">Google Gemini API Key</h3>
-              </div>
-              <button onClick={() => setShowKeyModal(false)} className="text-slate-400 hover:text-slate-600">
-                <X size={20} />
-              </button>
-            </div>
-            <p className="text-xs text-slate-500 leading-relaxed mb-4">
-              Aap apni Google Gemini API key yahan paste kar sakte hain. Key browser me save ho jayegi aur Assistant live Gemini 1.5 Flash se direct connect ho jayega!
-            </p>
-            <input
-              type="password"
-              placeholder="Paste AIzaSy... key here"
-              value={keyInput}
-              onChange={(e) => setKeyInput(e.target.value)}
-              className="w-full rounded-xl border px-4 py-3 text-sm outline-none mb-4"
-              style={{ background: 'var(--bg-card-inner)', borderColor: 'var(--border)' }}
-            />
-            <div className="flex items-center justify-end gap-2">
-              <button
-                type="button"
-                onClick={() => setShowKeyModal(false)}
-                className="px-4 py-2 rounded-xl text-sm font-semibold hover:bg-black/5"
-              >
-                Cancel
-              </button>
-              <button
-                type="button"
-                onClick={handleSaveKey}
-                className="px-5 py-2 rounded-xl text-sm font-bold text-white shadow"
-                style={{ background: 'linear-gradient(135deg, #dc2626, #f97316)' }}
-              >
-                Save Key
-              </button>
-            </div>
-          </motion.div>
-        </div>
-      )}
     </>
   );
 }

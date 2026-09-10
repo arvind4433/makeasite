@@ -237,8 +237,8 @@ const OrderModal = () => {
                           </div>
                         </div>
                       </div>
-                      <div className="rounded-xl border border-amber-200 dark:border-amber-500/20 bg-amber-50/80 dark:bg-amber-500/10 px-3.5 py-2.5 text-xs text-amber-800 dark:text-amber-300">
-                        ⚡ <strong>Estimate Notice:</strong> Yeh ek base estimated price calculation hai. Baki agar aapko extra pages ya specific features chahiye, toh final price hum aapse discussion ke dauran set kar lenge.
+                      <div className="rounded-xl border px-3.5 py-2.5 text-xs text-slate-500 dark:text-slate-400" style={{ background: 'var(--bg-card-inner)', borderColor: 'var(--border)' }}>
+                        * Base estimate. Final price is confirmed based on your exact requirements.
                       </div>
                       <div className="grid gap-4 sm:grid-cols-2">
                         <label className="block space-y-2"><span className="text-sm font-bold">Project category</span><input value={form.businessCategory} onChange={setField('businessCategory')} className={fieldClasses(errors.businessCategory)} style={inputStyle(errors.businessCategory)} /></label>
