@@ -1,6 +1,6 @@
 import { useState, useEffect, useContext } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { CheckCircle2, Eye, EyeOff, Loader2, Mail, Phone, ShieldCheck, X, AlertCircle } from "lucide-react";
+import { CheckCircle2, Eye, EyeOff, Loader2, Mail, Phone, ShieldCheck, X, AlertCircle, Lock } from "lucide-react";
 import { API_BASE_URL } from "../config/api";
 import Logo from "../components/Logo";
 import { AuthContext } from "../context/AuthContext";
@@ -163,20 +163,50 @@ export default function RegisterModal({ isOpen, onClose, openLogin }) {
           <div className="space-y-4 p-4 sm:p-5">
             {stage === "form" ? (
               <>
-                {/* Notice Banner */}
-                <div className="rounded-2xl border border-amber-300 dark:border-amber-500/30 bg-amber-50 dark:bg-amber-500/10 p-3.5 text-xs sm:text-sm text-amber-900 dark:text-amber-200 leading-relaxed flex items-start gap-2.5 shadow-sm">
-                  <AlertCircle className="w-5 h-5 flex-shrink-0 text-amber-600 mt-0.5" />
-                  <div>
-                    <strong>Notice:</strong> Yeh manual registration abhi allow nahi kiya gaya hai. Aap niche diye gaye <strong>Google / Social Account</strong> se directly sign-up kar sakte hain!
+                {/* Form Fields (Blurred & Feature Locked) */}
+                <div className="relative overflow-hidden rounded-2xl border border-[var(--border)] p-4 bg-[var(--bg-card-inner)]">
+                  {/* Blurred Form Fields */}
+                  <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2 filter blur-[1.5px] opacity-35 select-none pointer-events-none">
+                    <input
+                      type="text"
+                      disabled
+                      placeholder="Full Name"
+                      className="w-full rounded-xl border border-[var(--border)] px-4 py-2 text-sm bg-transparent"
+                    />
+
+                    <input
+                      type="email"
+                      disabled
+                      placeholder="Email address"
+                      className="w-full rounded-xl border border-[var(--border)] px-4 py-2 text-sm bg-transparent"
+                    />
+
+                    <div className="sm:col-span-2">
+                      <input
+                        type="password"
+                        disabled
+                        placeholder="Create password"
+                        className="w-full rounded-xl border border-[var(--border)] px-4 py-2 text-sm bg-transparent"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Lock Overlay Badge */}
+                  <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/10 dark:bg-black/30 backdrop-blur-[1px]">
+                    <div className="flex items-center gap-2 rounded-full border border-slate-300 dark:border-slate-700 bg-white/95 dark:bg-slate-900/95 px-4 py-1.5 shadow-md">
+                      <Lock size={14} className="text-amber-500" />
+                      <span className="text-xs font-bold text-slate-800 dark:text-slate-200 tracking-wide">Locked (Feature Under Development)</span>
+                    </div>
                   </div>
                 </div>
 
-                {/* Prominent Social Signup Options */}
-                <div>
+                {/* Vertically Stacked Social Signups (Google -> Facebook -> LinkedIn) */}
+                <div className="space-y-2.5 pt-1">
+                  {/* Google Button */}
                   <button
                     type="button"
                     onClick={googleSignup}
-                    className="flex w-full items-center justify-center gap-3 rounded-2xl border-2 border-red-500/30 hover:border-red-500 px-4 py-3 text-sm font-bold shadow-sm transition-all hover:scale-[1.01]"
+                    className="flex w-full items-center justify-center gap-3 rounded-2xl border-2 border-red-500/25 hover:border-red-500 px-4 py-3 text-sm font-bold shadow-sm transition-all hover:scale-[1.01]"
                     style={{ background: 'var(--bg-card-inner)' }}
                   >
                     <img
@@ -184,102 +214,51 @@ export default function RegisterModal({ isOpen, onClose, openLogin }) {
                       className="w-5 h-5"
                       alt="Google"
                     />
-                    Sign up with Google (Recommended)
+                    <span>Sign up with Google</span>
                   </button>
 
-                  <div className="grid grid-cols-2 gap-2.5 mt-2.5">
-                    <button
-                      type="button"
-                      onClick={facebookSignup}
-                      className="flex items-center justify-center gap-2 rounded-xl border px-3 py-2 text-xs font-bold hover:bg-black/5 dark:hover:bg-white/5"
-                    >
-                      <img
-                        src="https://cdn-icons-png.flaticon.com/512/124/124010.png"
-                        className="w-4 h-4"
-                        alt="Facebook"
-                      />
-                      Facebook
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={linkedinSignup}
-                      className="flex items-center justify-center gap-2 rounded-xl border px-3 py-2 text-xs font-bold hover:bg-black/5 dark:hover:bg-white/5"
-                    >
-                      <img
-                        src="https://cdn-icons-png.flaticon.com/512/174/174857.png"
-                        className="w-4 h-4"
-                        alt="LinkedIn"
-                      />
-                      LinkedIn
-                    </button>
-                  </div>
-                </div>
-
-                <div className="relative my-1">
-                  <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-[var(--border)]" /></div>
-                  <div className="relative flex justify-center text-[11px] uppercase tracking-wider"><span className="bg-[var(--bg-card)] px-2 text-slate-400 font-semibold">Or Manual Register (Under Maintenance)</span></div>
-                </div>
-
-                <form onSubmit={handleRegister} className="grid grid-cols-1 gap-2.5 md:grid-cols-2 md:gap-3 opacity-75">
-                  <input
-                    type="text"
-                    placeholder="Full Name"
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    className="w-full rounded-xl border px-4 py-2"
-                  />
-
-                  <input
-                    type="email"
-                    placeholder="Email address"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    className="w-full rounded-xl border px-4 py-2"
-                  />
-
-                  <div className="md:col-span-2 relative">
-                    <input
-                      type={showPassword ? "text" : "password"}
-                      placeholder="Create password"
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      className="w-full rounded-xl border px-4 py-2 pr-12"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setShowPassword((current) => !current)}
-                      className="absolute right-4 top-1/2 -translate-y-1/2"
-                    >
-                      {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-                    </button>
-                  </div>
-
-                  <div className="md:col-span-2">
-                    <input
-                      type={showPassword ? "text" : "password"}
-                      placeholder="Confirm password"
-                      value={confirmPassword}
-                      onChange={(e) => setConfirmPassword(e.target.value)}
-                      className="w-full rounded-xl border px-4 py-2"
-                    />
-                  </div>
-
+                  {/* Facebook Button */}
                   <button
-                    type="submit"
-                    disabled={submitting}
-                    className="flex w-full items-center justify-center gap-2 rounded-xl bg-red-600 px-4 py-2 text-white md:col-span-2 opacity-80 cursor-not-allowed"
+                    type="button"
+                    onClick={facebookSignup}
+                    className="flex w-full items-center justify-center gap-3 rounded-2xl border border-blue-500/30 hover:border-blue-500 px-4 py-3 text-sm font-bold shadow-sm transition-all hover:scale-[1.01]"
+                    style={{ background: 'var(--bg-card-inner)' }}
                   >
-                    Create Account
+                    <img
+                      src="https://cdn-icons-png.flaticon.com/512/124/124010.png"
+                      className="w-5 h-5"
+                      alt="Facebook"
+                    />
+                    <span>Sign up with Facebook</span>
                   </button>
-                </form>
 
-                <p className="text-center text-[13px] text-gray-400 sm:text-sm">
+                  {/* LinkedIn Button */}
+                  <button
+                    type="button"
+                    onClick={linkedinSignup}
+                    className="flex w-full items-center justify-center gap-3 rounded-2xl border border-sky-500/30 hover:border-sky-500 px-4 py-3 text-sm font-bold shadow-sm transition-all hover:scale-[1.01]"
+                    style={{ background: 'var(--bg-card-inner)' }}
+                  >
+                    <img
+                      src="https://cdn-icons-png.flaticon.com/512/174/174857.png"
+                      className="w-5 h-5"
+                      alt="LinkedIn"
+                    />
+                    <span>Sign up with LinkedIn</span>
+                  </button>
+                </div>
+
+                {/* Footer Switch to Login */}
+                <div className="pt-2 text-center text-xs text-gray-400">
                   Already have account?
-                  <button type="button" onClick={openLogin} className="text-red-600 ml-1 font-semibold hover:underline">
+                  <button
+                    type="button"
+                    onClick={openLogin}
+                    className="text-red-600 font-bold ml-1.5 hover:underline"
+                  >
                     Login
                   </button>
-                </p>
+                </div>
               </>
             ) : (
               <>

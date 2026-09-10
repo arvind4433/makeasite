@@ -398,37 +398,56 @@ const Dashboard = () => {
                   </label>
 
                   <div className="space-y-2 md:col-span-2">
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm font-semibold">Email Address</span>
-                      {user.emailVerified ? (
-                        <span className="inline-flex items-center gap-1 rounded-full px-3 py-1 text-xs font-bold bg-emerald-100 dark:bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-500/30">
-                          <CheckCircle2 size={13} /> Verified (Locked)
-                        </span>
-                      ) : (
-                        <span className="rounded-full px-3 py-1 text-xs font-bold bg-amber-100 text-amber-800">
-                          Not Verified
-                        </span>
-                      )}
-                    </div>
-                    <input
-                      type="email"
-                      value={profileForm.email}
-                      disabled={Boolean(user.emailVerified)}
-                      readOnly={Boolean(user.emailVerified)}
-                      onChange={(event) => setProfileForm((prev) => ({ ...prev, email: event.target.value }))}
-                      className={`w-full rounded-2xl px-4 py-3 outline-none ${user.emailVerified ? 'cursor-not-allowed opacity-80' : ''}`}
-                      style={{ background: 'var(--bg-card-inner)', border: '1px solid var(--border)', color: 'var(--text-primary)' }}
-                    />
-                    {user.emailVerified && (
-                      <p className="text-xs" style={{ color: 'var(--text-secondary)' }}>
-                        🔒 Verified email address cannot be changed for account security.
-                      </p>
-                    )}
+                    {(() => {
+                      const isEmailVerified = Boolean(
+                        user.emailVerified ||
+                        user.provider === 'google' ||
+                        user.provider === 'facebook' ||
+                        user.provider === 'linkedin' ||
+                        user.isVerified
+                      );
+                      return (
+                        <>
+                          <div className="flex items-center justify-between">
+                            <span className="text-sm font-semibold">Email Address</span>
+                            {isEmailVerified ? (
+                              <span className="inline-flex items-center gap-1 rounded-full px-3 py-1 text-xs font-bold bg-emerald-100 dark:bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-500/30">
+                                <CheckCircle2 size={13} /> Verified (Locked)
+                              </span>
+                            ) : (
+                              <span className="rounded-full px-3 py-1 text-xs font-bold bg-amber-100 text-amber-800">
+                                Not Verified
+                              </span>
+                            )}
+                          </div>
+                          <input
+                            type="email"
+                            value={profileForm.email}
+                            disabled={isEmailVerified}
+                            readOnly={isEmailVerified}
+                            onChange={(event) => setProfileForm((prev) => ({ ...prev, email: event.target.value }))}
+                            className={`w-full rounded-2xl px-4 py-3 outline-none ${isEmailVerified ? 'cursor-not-allowed opacity-80' : ''}`}
+                            style={{ background: 'var(--bg-card-inner)', border: '1px solid var(--border)', color: 'var(--text-primary)' }}
+                          />
+                          {isEmailVerified && (
+                            <p className="text-xs" style={{ color: 'var(--text-secondary)' }}>
+                              🔒 Verified email address cannot be changed for account security.
+                            </p>
+                          )}
+                        </>
+                      );
+                    })()}
                   </div>
                 </div>
 
-                {/* Email verification OTP row ONLY if email is not verified */}
-                {!user.emailVerified && (
+                {/* Email verification OTP row ONLY if email is not verified and not social auth */}
+                {!Boolean(
+                  user.emailVerified ||
+                  user.provider === 'google' ||
+                  user.provider === 'facebook' ||
+                  user.provider === 'linkedin' ||
+                  user.isVerified
+                ) && (
                   <div className="rounded-2xl p-5 border" style={innerCardStyle}>
                     <div className="flex items-center justify-between">
                       <div className="font-bold flex items-center gap-2">

@@ -9,7 +9,8 @@ import {
   Loader2,
   Mail,
   Phone,
-  AlertCircle
+  AlertCircle,
+  Lock
 } from "lucide-react";
 import OTPModal from "../components/OTPModal";
 import { API_BASE_URL } from "../config/api";
@@ -99,20 +100,46 @@ export default function LoginModal({
               </div>
 
               <div className="space-y-4 p-4 sm:p-5">
-                {/* Notice Banner */}
-                <div className="rounded-2xl border border-amber-300 dark:border-amber-500/30 bg-amber-50 dark:bg-amber-500/10 p-3.5 text-xs sm:text-sm text-amber-900 dark:text-amber-200 leading-relaxed flex items-start gap-2.5 shadow-sm">
-                  <AlertCircle className="w-5 h-5 flex-shrink-0 text-amber-600 mt-0.5" />
-                  <div>
-                    <strong>Notice:</strong> Yeh manual login abhi allow nahi kiya gaya hai. Aap niche diye gaye <strong>Google / Social Account</strong> se directly login kar sakte hain!
+                {/* Email & Password (Blurred & Feature Locked) */}
+                <div className="relative overflow-hidden rounded-2xl border border-[var(--border)] p-4 bg-[var(--bg-card-inner)]">
+                  {/* Blurred Form Fields */}
+                  <div className="space-y-3 filter blur-[1.5px] opacity-35 select-none pointer-events-none">
+                    <div>
+                      <label className="block text-xs font-bold mb-1 text-slate-600 dark:text-slate-400">Email Address / Number</label>
+                      <input
+                        type="text"
+                        disabled
+                        placeholder="you@example.com / +91..."
+                        className="w-full rounded-xl border border-[var(--border)] px-4 py-2 text-sm bg-transparent"
+                      />
+                    </div>
+                    <div className="relative">
+                      <label className="block text-xs font-bold mb-1 text-slate-600 dark:text-slate-400">Password</label>
+                      <input
+                        type="password"
+                        disabled
+                        placeholder="••••••••"
+                        className="w-full rounded-xl border border-[var(--border)] px-4 py-2 text-sm bg-transparent"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Lock Overlay Badge */}
+                  <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/10 dark:bg-black/30 backdrop-blur-[1px]">
+                    <div className="flex items-center gap-2 rounded-full border border-slate-300 dark:border-slate-700 bg-white/95 dark:bg-slate-900/95 px-4 py-1.5 shadow-md">
+                      <Lock size={14} className="text-amber-500" />
+                      <span className="text-xs font-bold text-slate-800 dark:text-slate-200 tracking-wide">Locked (Feature Under Development)</span>
+                    </div>
                   </div>
                 </div>
 
-                {/* Prominent Social Login Options */}
-                <div>
+                {/* Vertically Stacked Social Logins (Google -> Facebook -> LinkedIn) */}
+                <div className="space-y-2.5 pt-1">
+                  {/* Google Button */}
                   <button
                     type="button"
                     onClick={googleLogin}
-                    className="flex w-full items-center justify-center gap-3 rounded-2xl border-2 border-red-500/30 hover:border-red-500 px-4 py-3 text-sm font-bold shadow-sm transition-all hover:scale-[1.01]"
+                    className="flex w-full items-center justify-center gap-3 rounded-2xl border-2 border-red-500/25 hover:border-red-500 px-4 py-3 text-sm font-bold shadow-sm transition-all hover:scale-[1.01]"
                     style={{ background: 'var(--bg-card-inner)' }}
                   >
                     <img
@@ -120,90 +147,51 @@ export default function LoginModal({
                       className="w-5 h-5"
                       alt="Google"
                     />
-                    Continue with Google (Recommended)
+                    <span>Continue with Google</span>
                   </button>
 
-                  <div className="grid grid-cols-2 gap-2.5 mt-2.5">
-                    <button
-                      type="button"
-                      onClick={facebookLogin}
-                      className="flex items-center justify-center gap-2 rounded-xl border px-3 py-2 text-xs font-bold hover:bg-black/5 dark:hover:bg-white/5"
-                    >
-                      <img
-                        src="https://cdn-icons-png.flaticon.com/512/124/124010.png"
-                        className="w-4 h-4"
-                        alt="Facebook"
-                      />
-                      Facebook
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={linkedinLogin}
-                      className="flex items-center justify-center gap-2 rounded-xl border px-3 py-2 text-xs font-bold hover:bg-black/5 dark:hover:bg-white/5"
-                    >
-                      <img
-                        src="https://cdn-icons-png.flaticon.com/512/174/174857.png"
-                        className="w-4 h-4"
-                        alt="LinkedIn"
-                      />
-                      LinkedIn
-                    </button>
-                  </div>
-                </div>
-
-                <div className="relative my-1">
-                  <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-[var(--border)]" /></div>
-                  <div className="relative flex justify-center text-[11px] uppercase tracking-wider"><span className="bg-[var(--bg-card)] px-2 text-slate-400 font-semibold">Or Manual Sign-In (Under Maintenance)</span></div>
-                </div>
-
-                <form onSubmit={handleLogin} className="space-y-3 opacity-75">
-                  <div>
-                    <label className="block text-xs font-bold mb-1 text-slate-600 dark:text-slate-400">Email Address</label>
-                    <input
-                      type="email"
-                      placeholder="you@example.com"
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      className="w-full rounded-xl border px-4 py-2 text-sm outline-none"
-                    />
-                  </div>
-
-                  <div className="relative">
-                    <input
-                      type={showPassword ? "text" : "password"}
-                      placeholder="Password"
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      className="w-full rounded-xl border px-4 py-2 pr-12 text-sm outline-none"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setShowPassword((current) => !current)}
-                      className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400"
-                    >
-                      {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-                    </button>
-                  </div>
-
+                  {/* Facebook Button */}
                   <button
-                    type="submit"
-                    className="flex w-full items-center justify-center gap-2 rounded-xl bg-slate-700 hover:bg-slate-800 px-4 py-2 text-white text-sm font-semibold"
+                    type="button"
+                    onClick={facebookLogin}
+                    className="flex w-full items-center justify-center gap-3 rounded-2xl border border-blue-500/30 hover:border-blue-500 px-4 py-3 text-sm font-bold shadow-sm transition-all hover:scale-[1.01]"
+                    style={{ background: 'var(--bg-card-inner)' }}
                   >
-                    Continue
+                    <img
+                      src="https://cdn-icons-png.flaticon.com/512/124/124010.png"
+                      className="w-5 h-5"
+                      alt="Facebook"
+                    />
+                    <span>Continue with Facebook</span>
                   </button>
 
-                  <p className="text-center text-xs text-gray-400">
-                    Don&apos;t have an account?
-                    <button
-                      type="button"
-                      onClick={openRegister}
-                      className="text-red-600 font-bold ml-1"
-                    >
-                      Register
-                    </button>
-                  </p>
-                </form>
+                  {/* LinkedIn Button */}
+                  <button
+                    type="button"
+                    onClick={linkedinLogin}
+                    className="flex w-full items-center justify-center gap-3 rounded-2xl border border-sky-500/30 hover:border-sky-500 px-4 py-3 text-sm font-bold shadow-sm transition-all hover:scale-[1.01]"
+                    style={{ background: 'var(--bg-card-inner)' }}
+                  >
+                    <img
+                      src="https://cdn-icons-png.flaticon.com/512/174/174857.png"
+                      className="w-5 h-5"
+                      alt="LinkedIn"
+                    />
+                    <span>Continue with LinkedIn</span>
+                  </button>
+                </div>
+
+                {/* Footer Switch to Register */}
+                <div className="pt-2 text-center text-xs text-gray-400">
+                  Don&apos;t have an account?
+                  <button
+                    type="button"
+                    onClick={openRegister}
+                    className="text-red-600 font-bold ml-1.5 hover:underline"
+                  >
+                    Register
+                  </button>
+                </div>
               </div>
             </motion.div>
           </motion.div>

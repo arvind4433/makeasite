@@ -44,6 +44,10 @@ export default function SocialAuth() {
           phone: data.phone,
           avatar: data.avatar,
           role: data.role,
+          isVerified: true,
+          emailVerified: true,
+          phoneVerified: true,
+          provider: data.provider || provider,
           preferences: data.preferences
         });
 

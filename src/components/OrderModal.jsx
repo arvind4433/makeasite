@@ -133,7 +133,14 @@ const OrderModal = () => {
 
   const handleSubmit = async () => {
     if (!validateStep()) return;
-    if (!user?.emailVerified) {
+    const isVerified = Boolean(
+      user?.emailVerified ||
+      user?.isVerified ||
+      user?.provider === 'google' ||
+      user?.provider === 'facebook' ||
+      user?.provider === 'linkedin'
+    );
+    if (!isVerified) {
       toast.error('Please verify your email in your profile before creating an order.');
       return;
     }

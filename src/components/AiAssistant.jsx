@@ -13,54 +13,60 @@ import {
 } from 'lucide-react';
 
 const SYSTEM_PROMPT = `
-You are the friendly, human-like AI consultant for MakeASite (founded by Arvind Singh).
-Your tone is extremely warm, welcoming, polite, and helpful. You speak naturally in conversational Hinglish or English (matching whatever language the user uses).
+You are a warm, humble, and friendly human team consultant at MakeASite, working directly alongside Arvind Singh (the founder).
+Tone & Personality:
+- Speak completely like a real, polite, and caring human being talking on WhatsApp or over a friendly call.
+- NEVER say "As an AI" or give robotic, formal corporate replies.
+- Talk naturally in conversational Hinglish (or English if the user types in English). Use natural, respectful Indian conversational phrases like "Namaste ji!", "Haanji bilkul!", "Aap bilkul fikar na karein", "Hum aapke project ko best banayenge".
+- Keep your answers concise, clear, and helpful.
 
-Key MakeASite Information:
-- Services: Landing Pages, Business Websites, Dynamic Web Apps with Database & Login, E-Commerce Stores, Admin Dashboards, API integrations.
-- Projects Delivered: Over 1000+ projects completed with 98% satisfaction.
-- Pricing Estimates:
-  * Static Websites: starting ~₹3,000 - ₹5,000 (usually 7-8 pages included).
-  * Dynamic Websites: starting ~₹5,000 - ₹10,000+ (includes database, login system).
-  * Advanced Dashboards & Custom Enterprise: ₹15,000 - ₹50,000+.
-  * All prices are estimates; final quotes are customized during direct discussion based on exact pages and features.
-- Delivery Time: Usually delivered within 3 to 7 days (fast-track delivery available).
-- Contact Info:
-  * WhatsApp: +91 8894810531 (Arvind Singh)
+MakeASite Key Details:
+- Experience: 1000+ successful projects delivered with high client satisfaction.
+- Services: Portfolio & business websites, responsive landing pages, e-commerce stores, custom dynamic web apps with database & login, admin dashboards, and SEO optimization.
+- Pricing Estimates (Important):
+  * Static Websites: ~₹3,000 - ₹5,000 (usually includes 7-8 pages base).
+  * Dynamic Websites: ~₹5,000 - ₹10,000+ (includes database & user login).
+  * Custom Web Apps & Dashboards: ₹15,000+.
+  * Clarify politely that these are estimates; if they need more pages or custom integrations, final price will be finalized during personal discussion.
+- Delivery Time: Fast delivery in 3 to 7 days. Urgent express delivery is also available.
+- Contact Details:
+  * Founder: Arvind Singh
+  * WhatsApp: +91 8894810531
   * Email: arvind889481@gmail.com
-- Escalation Rule (VERY IMPORTANT): If a user asks something very specific, custom quotation negotiation, technical questions beyond general info, or whenever in doubt, warmly guide them:
-  "Aap hamara Contact Form fill kar dijiye ya Arvind ji ko direct WhatsApp (+91 8894810531) par message karein, hum aapse detail me baat karke final deal finalize kar lenge!"
-Keep answers concise, direct, helpful, and never sound robotic.
+
+Human Escalation & Unknown Questions:
+- If a user asks something very specific, asks for negotiation, custom integration, or something you don't have exact details for, warmly and politely guide them:
+  "Is cheez ke baare me aap hamara Contact Form bhar dein ya seedhe Arvind ji ko WhatsApp (+91 8894810531) par message kar lijiye, hum aapse direct call ya chat par baat karke deal aur requirements finalize kar lenge!"
 `;
 
 const DEFAULT_SUGGESTIONS = [
-  "💰 Website ka price kitna hoga?",
-  "⚡ Delivery kitne dino me hogi?",
-  "💬 Arvind ji se WhatsApp par baat karni hai",
-  "📝 Contact form kaise bharein?"
+  "💰 Website ka estimate price kitna hoga?",
+  "⚡ Delivery kitne dino me ho jayegi?",
+  "💬 Arvind ji se direct WhatsApp par baat karni hai",
+  "📝 Contact form kaise submit karein?"
 ];
 
 // Fallback smart responder if Gemini API key is not yet set by user
 const smartFallbackReply = (text) => {
   const q = text.toLowerCase();
 
-  if (q.includes('price') || q.includes('cost') || q.includes('rate') || q.includes('kitna') || q.includes('paise') || q.includes('pese') || q.includes('charges')) {
-    return `MakeASite par websites bahut hi affordable aur professional hain! 🚀\n\n• **Static Website:** ~₹3,000 se ₹5,000 (7-8 pages tak)\n• **Dynamic Website:** ~₹5,000 se ₹10,000 (Database & Login included)\n• **Custom Dashboard / Web App:** ₹15,000+\n\n⚠️ *Yeh ek estimate price hai. Final price aapki exact requirement discuss karke tay ki jayegi.* Aap pricing section dekh sakte hain ya direct WhatsApp (+91 8894810531) par ping kar sakte hain!`;
+  if (q.includes('price') || q.includes('cost') || q.includes('rate') || q.includes('kitna') || q.includes('paise') || q.includes('pese') || q.includes('charges') || q.includes('kharcha')) {
+    return `Haanji! MakeASite par hum best quality websites bahut hi genuine aur pocket-friendly rates me deliver karte hain. 🚀\n\n• **Static Website:** ~₹3,000 se ₹5,000 tak (7-8 pages included)\n• **Dynamic Website:** ~₹5,000 se ₹10,000 tak (Database & Login system included)\n• **Custom Web App / Dashboard:** ₹15,000+\n\n*Yeh ek base estimate hai.* Agar aapko extra pages ya specific custom features chahiye toh hum direct baat karke final budget fix kar lenge! Aap chahein toh niche diye button se Arvind ji ko WhatsApp (+91 8894810531) par ping kar sakte hain.`;
   }
 
-  if (q.includes('deliver') || q.includes('time') || q.includes('din') || q.includes('kab tak') || q.includes('fast')) {
-    return `Hum standard projects **3 se 7 dino** ke andar deliver kar dete hain! ⚡\nAgar aapko urgent project chahiye toh 2x faster delivery option bhi available hai. Hamare saath 1000+ projects successfully deliver ho chuke hain!`;
+  if (q.includes('deliver') || q.includes('time') || q.includes('din') || q.includes('kab tak') || q.includes('fast') || q.includes('urg')) {
+    return `Hum standard projects **3 se 7 dino** ke andar complete karke live kar dete hain! ⚡\nAgar aapko emergency ya jaldi chahiye, toh express fast-track delivery option bhi available hai. Hamare saath 1000+ projects ab tak successfully deliver ho chuke hain!`;
   }
 
-  if (q.includes('whatsapp') || q.includes('phone') || q.includes('number') || q.includes('call') || q.includes('contact') || q.includes('arvind')) {
-    return `Aap direct Arvind ji se WhatsApp par connect kar sakte hain:\n\n📱 **WhatsApp:** +91 8894810531\n✉️ **Email:** arvind889481@gmail.com\n\nNiche WhatsApp button par click karke aap direct chat start kar sakte hain!`;
+  if (q.includes('whatsapp') || q.includes('phone') || q.includes('number') || q.includes('call') || q.includes('contact') || q.includes('arvind') || q.includes('baat')) {
+    return `Aap direct Arvind ji se connect kar sakte hain, hum turant reply karte hain:\n\n📱 **WhatsApp:** +91 8894810531\n✉️ **Email:** arvind889481@gmail.com\n\nNiche WhatsApp button par click karke aap direct chat shuru kar sakte hain!`;
   }
 
-  if (q.includes('form') || q.includes('inquiry') || q.includes('quote')) {
-    return `Aap hamari website ke **Contact Page** par jakar form fill kar sakte hain. Form fill karte hi aapka message Arvind ji ke WhatsApp aur Email dono par turant pahunch jayega!`;
+  if (q.includes('form') || q.includes('inquiry') || q.includes('quote') || q.includes('message')) {
+    return `Aap hamari website ke **Contact Page** par jakar form fill kar sakte hain. Form fill karte hi aapka message Arvind ji ke WhatsApp aur Email dono par turant pahunch jayega aur hum aapse jaldi hi rabta karenge!`;
   }
 
-  return `Bilkul! MakeASite par hum 1000+ websites deliver kar chuke hain. Aapki requirement ke hisab se hum best responsive aur modern design banate hain.\n\nAgar aapko custom feature chahiye ya koi specific sawaal hai, toh aap **Contact Form** fill kar dijiye ya Arvind ji ko direct **WhatsApp (+91 8894810531)** par message karein, hum aapse detail me baat karke resolve kar denge! 🙏`;
+  return `Haanji bilkul! MakeASite par humne 1000+ websites deliver ki hain. Aapki requirement ke according hum modern, ultra-fast aur mobile responsive website create kar denge.\n\nAgar aapko custom feature chahiye ya specific requirements discuss karni hain, toh aap **Contact Form** fill kar dein ya Arvind ji ko direct **WhatsApp (+91 8894810531)** par message karein, hum milkar sab kuch finalize kar lenge! 🙏`;
 };
 
 export default function AiAssistant() {
