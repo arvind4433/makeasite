@@ -99,14 +99,13 @@ export const AuthProvider = ({ children }) => {
     };
 
     const login = async (credentials) => {
-        startLoading();
         try {
-            return await loginMutation(credentials).unwrap();
+            const data = await loginMutation(credentials).unwrap();
+            hydrateUser(data);
+            return data;
         } catch (error) {
             toast.error(getErrorMessage(error, 'Login failed'));
             throw error;
-        } finally {
-            stopLoading();
         }
     };
 
@@ -127,19 +126,15 @@ export const AuthProvider = ({ children }) => {
     };
 
     const verifyContactOTP = async ({ channel, otp, email, phone }) => {
-        startLoading();
         try {
             return await verifyContactOtpMutation({ channel, otp, email, phone }).unwrap();
         } catch (error) {
             toast.error(getErrorMessage(error, 'Invalid OTP'));
             throw error;
-        } finally {
-            stopLoading();
         }
     };
 
     const register = async (userData) => {
-        startLoading();
         try {
             const data = await registerMutation(userData).unwrap();
             toast.success(data.message || 'Verification OTPs sent');
@@ -147,8 +142,6 @@ export const AuthProvider = ({ children }) => {
         } catch (error) {
             toast.error(getErrorMessage(error, 'Registration failed'));
             throw error;
-        } finally {
-            stopLoading();
         }
     };
 
