@@ -206,12 +206,11 @@ export default function RegisterModal({ isOpen, onClose, openLogin }) {
                   <button
                     type="button"
                     onClick={facebookSignup}
-                    className="flex w-full items-center justify-center gap-3 rounded-2xl border border-blue-500/30 hover:border-blue-500 px-4 py-3 text-sm font-bold shadow-sm transition-all hover:scale-[1.01]"
-                    style={{ background: 'var(--bg-card-inner)' }}
+                    className="relative mx-auto flex h-10 w-full max-w-[400px] items-center justify-center rounded-full border border-[#dadce0] bg-white px-4 text-sm font-medium text-[#3c4043] transition-colors hover:bg-[#f8faff]"
                   >
                     <img
                       src="https://cdn-icons-png.flaticon.com/512/124/124010.png"
-                      className="w-5 h-5"
+                      className="absolute left-3 h-5 w-5"
                       alt="Facebook"
                     />
                     <span>Sign up with Facebook</span>
@@ -221,12 +220,11 @@ export default function RegisterModal({ isOpen, onClose, openLogin }) {
                   <button
                     type="button"
                     onClick={linkedinSignup}
-                    className="flex w-full items-center justify-center gap-3 rounded-2xl border border-sky-500/30 hover:border-sky-500 px-4 py-3 text-sm font-bold shadow-sm transition-all hover:scale-[1.01]"
-                    style={{ background: 'var(--bg-card-inner)' }}
+                    className="relative mx-auto flex h-10 w-full max-w-[400px] items-center justify-center rounded-full border border-[#dadce0] bg-white px-4 text-sm font-medium text-[#3c4043] transition-colors hover:bg-[#f8faff]"
                   >
                     <img
                       src="https://cdn-icons-png.flaticon.com/512/174/174857.png"
-                      className="w-5 h-5"
+                      className="absolute left-3 h-5 w-5"
                       alt="LinkedIn"
                     />
                     <span>Sign up with LinkedIn</span>

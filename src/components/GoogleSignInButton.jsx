@@ -41,7 +41,7 @@ export default function GoogleSignInButton({ label = "Continue with Google" }) {
   }
 
   return (
-    <div className={submitting ? "pointer-events-none opacity-70" : ""}>
+    <div className={`mx-auto w-full max-w-[400px] ${submitting ? "pointer-events-none opacity-70" : ""}`}>
       <GoogleLogin
         onSuccess={handleSuccess}
         onError={() => toast.error("Google sign-in was cancelled or could not be opened.")}
