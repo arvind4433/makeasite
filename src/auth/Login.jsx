@@ -15,6 +15,7 @@ import {
 import OTPModal from "../components/OTPModal";
 import { API_BASE_URL } from "../config/api";
 import Logo from "../components/Logo";
+import GoogleSignInButton from "../components/GoogleSignInButton";
 import { AuthContext } from "../context/AuthContext";
 import { toast } from "sonner";
 
@@ -46,10 +47,6 @@ export default function LoginModal({
       onClose();
     }
   }, [user, onClose]);
-
-  const googleLogin = () => {
-    window.location.href = `${API_BASE_URL}/api/auth/google`;
-  };
 
   const facebookLogin = () => {
     window.location.href = `${API_BASE_URL}/api/auth/facebook`;
@@ -136,19 +133,7 @@ export default function LoginModal({
                 {/* Vertically Stacked Social Logins (Google -> Facebook -> LinkedIn) */}
                 <div className="space-y-2.5 pt-1">
                   {/* Google Button */}
-                  <button
-                    type="button"
-                    onClick={googleLogin}
-                    className="flex w-full items-center justify-center gap-3 rounded-2xl border-2 border-red-500/25 hover:border-red-500 px-4 py-3 text-sm font-bold shadow-sm transition-all hover:scale-[1.01]"
-                    style={{ background: 'var(--bg-card-inner)' }}
-                  >
-                    <img
-                      src="https://cdn-icons-png.flaticon.com/512/281/281764.png"
-                      className="w-5 h-5"
-                      alt="Google"
-                    />
-                    <span>Continue with Google</span>
-                  </button>
+                  <GoogleSignInButton />
 
                   {/* Facebook Button */}
                   <button

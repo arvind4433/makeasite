@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { CheckCircle2, Eye, EyeOff, Loader2, Mail, Phone, ShieldCheck, X, AlertCircle, Lock } from "lucide-react";
 import { API_BASE_URL } from "../config/api";
 import Logo from "../components/Logo";
+import GoogleSignInButton from "../components/GoogleSignInButton";
 import { AuthContext } from "../context/AuthContext";
 import { toast } from "sonner";
 
@@ -121,10 +122,6 @@ export default function RegisterModal({ isOpen, onClose, openLogin }) {
     }
   };
 
-  const googleSignup = () => {
-    window.location.href = `${API_BASE_URL}/api/auth/google`;
-  };
-
   const facebookSignup = () => {
     window.location.href = `${API_BASE_URL}/api/auth/facebook`;
   };
@@ -203,19 +200,7 @@ export default function RegisterModal({ isOpen, onClose, openLogin }) {
                 {/* Vertically Stacked Social Signups (Google -> Facebook -> LinkedIn) */}
                 <div className="space-y-2.5 pt-1">
                   {/* Google Button */}
-                  <button
-                    type="button"
-                    onClick={googleSignup}
-                    className="flex w-full items-center justify-center gap-3 rounded-2xl border-2 border-red-500/25 hover:border-red-500 px-4 py-3 text-sm font-bold shadow-sm transition-all hover:scale-[1.01]"
-                    style={{ background: 'var(--bg-card-inner)' }}
-                  >
-                    <img
-                      src="https://cdn-icons-png.flaticon.com/512/281/281764.png"
-                      className="w-5 h-5"
-                      alt="Google"
-                    />
-                    <span>Sign up with Google</span>
-                  </button>
+                  <GoogleSignInButton label="Sign up with Google" />
 
                   {/* Facebook Button */}
                   <button
