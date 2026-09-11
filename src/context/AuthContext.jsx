@@ -212,7 +212,6 @@ export const AuthProvider = ({ children }) => {
     };
 
     const googleLogin = async (credential) => {
-        startLoading();
         try {
             const { data } = await apiClient.post('/auth/google', { credential });
             hydrateUser(data);
@@ -221,8 +220,6 @@ export const AuthProvider = ({ children }) => {
         } catch (error) {
             toast.error(getErrorMessage(error, 'Google sign-in failed. Please try again.'));
             throw error;
-        } finally {
-            stopLoading();
         }
     };
 

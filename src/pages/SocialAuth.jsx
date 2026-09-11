@@ -52,7 +52,7 @@ export default function SocialAuth() {
         });
 
         setStatus("success");
-        window.setTimeout(() => navigate("/", { replace: true }), 1800);
+        window.setTimeout(() => navigate("/", { replace: true }), 1000);
       } catch {
         toast.error('Social sign-in failed. Please try again.');
         navigate("/", { replace: true });
