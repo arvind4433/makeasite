@@ -1,17 +1,15 @@
-import { useEffect, useContext, useRef, useState } from "react";
+import { useEffect, useContext, useRef } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { AuthContext } from "../context/AuthContext";
 import { API_BASE_URL } from "../config/api";
-import AuthSuccessCard from "../components/AuthSuccessCard";
 
 export default function SocialAuth() {
   const [params] = useSearchParams();
   const navigate = useNavigate();
   const { hydrateUser } = useContext(AuthContext);
   const hasStartedRef = useRef(false);
-  const [status, setStatus] = useState("loading");
   const provider = params.get("provider") || "social";
 
   useEffect(() => {
@@ -51,8 +49,7 @@ export default function SocialAuth() {
           preferences: data.preferences
         });
 
-        setStatus("success");
-        window.setTimeout(() => navigate("/", { replace: true }), 1000);
+        navigate(data.role === "admin" ? "/admin-dashboard" : "/dashboard", { replace: true });
       } catch {
         toast.error('Social sign-in failed. Please try again.');
         navigate("/", { replace: true });
@@ -61,10 +58,6 @@ export default function SocialAuth() {
 
     run();
   }, [params, navigate, hydrateUser, provider]);
-
-  if (status === "success") {
-    return <AuthSuccessCard message="Login Successfully" />;
-  }
 
   return (
     <div className="min-h-screen bg-white flex items-center justify-center px-6">

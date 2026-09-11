@@ -4,14 +4,15 @@ import { Mail, Phone, MapPin, Send, CheckCircle2, ArrowRight, MessageCircle } fr
 import { toast } from 'sonner';
 import { Link } from 'react-router-dom';
 import { apiClient } from '../config/api';
+import { CONTACT } from '../data/contact';
 
 const projectTypes = ['Basic Website (₹3,000)', 'Standard Website (₹7,000)', 'Premium / Enterprise (₹50,000+)', 'Landing Page', 'E-Commerce Store', 'Admin Dashboard', 'Bug Fix / Support', 'Other / Custom'];
 const budgets = ['Under ₹5,000', '₹5,000 – ₹15,000', '₹15,000 – ₹50,000', '₹50,000 – ₹1,00,000', '₹1,00,000+'];
 
 const contactInfo = [
-    { icon: Mail, label: 'Email Us', value: 'arvind889481@gmail.com', href: 'mailto:arvind889481@gmail.com' },
-    { icon: Phone, label: 'WhatsApp', value: '+91 8894810531', href: 'https://wa.me/918894810531' },
-    { icon: MapPin, label: 'Location', value: 'India — Remote Worldwide', href: '#' },
+    { icon: Mail, label: 'Email Us', value: CONTACT.email, href: `mailto:${CONTACT.email}` },
+    { icon: Phone, label: 'WhatsApp', value: CONTACT.phone, href: CONTACT.whatsapp },
+    { icon: MapPin, label: 'Location', value: CONTACT.location, href: '#' },
 ];
 
 const ContactSection = () => {
@@ -40,7 +41,7 @@ const ContactSection = () => {
         const waText = encodeURIComponent(
             `*MakeASite Inquiry*\n\n*Name:* ${form.name.trim()}\n*Email:* ${form.email.trim()}\n*Project Type:* ${form.projectType}\n*Budget:* ${form.budget || 'Not specified'}\n\n*Project Details:*\n${form.message.trim()}`
         );
-        const waUrl = `https://wa.me/918894810531?text=${waText}`;
+        const waUrl = `${CONTACT.whatsapp}?text=${waText}`;
 
         try {
             await apiClient.post('/contact', {

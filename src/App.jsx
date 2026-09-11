@@ -1,4 +1,4 @@
-import { BrowserRouter as Router, Routes, Route, useLocation, useSearchParams } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate, useLocation, useSearchParams } from 'react-router-dom';
 import { Toaster } from 'sonner';
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
@@ -46,7 +46,7 @@ const ScrollToTop = () => {
 };
 
 /* ── Auth pages hide the global Footer ── */
-const AUTH_PATHS = ['/login', '/register', '/forgot-password', '/auth/callback'];
+const AUTH_PATHS = ['/login', '/register', '/forgot-password', '/auth/callback', '/social-auth'];
 const isAuthPath = (path) =>
   AUTH_PATHS.includes(path) || path.startsWith('/reset-password');
 
@@ -160,11 +160,12 @@ const AppInner = () => {
             <Route path="/contact" element={<ContactPage />} />
 
             {/* Auth pages */}
-            <Route path="/login" element={<LoginModal isOpen={true} onClose={() => {}} openRegister={() => window.location.assign('/register')} openForgotPassword={() => window.location.assign('/forgot-password')} />} />
-            <Route path="/register" element={<RegisterModal isOpen={true} onClose={() => {}} openLogin={() => window.location.assign('/login')} />} />
+            <Route path="/login" element={user ? <Navigate to={user.role === 'admin' ? '/admin-dashboard' : '/dashboard'} replace /> : <LoginModal isOpen={true} onClose={() => window.location.assign('/')} openRegister={() => window.location.assign('/register')} openForgotPassword={() => window.location.assign('/forgot-password')} />} />
+            <Route path="/register" element={user ? <Navigate to={user.role === 'admin' ? '/admin-dashboard' : '/dashboard'} replace /> : <RegisterModal isOpen={true} onClose={() => window.location.assign('/')} openLogin={() => window.location.assign('/login')} />} />
             <Route path="/forgot-password" element={<ForgotPasswordModal isOpen={true} onClose={() => window.location.assign('/login')} />} />
             <Route path="/reset-password/:token" element={<NewPasswordModal isOpen={true} onClose={() => {}} />} />
             <Route path="/social-auth" element={<SocialAuth />} />
+            <Route path="/auth/callback" element={<SocialAuth />} />
 
             {/* Footer / legal pages */}
             <Route path="/about" element={<AboutPage />} />
