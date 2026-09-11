@@ -1,7 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Send, RotateCcw } from 'lucide-react';
-import Logo from './Logo';
+import { X, Send, RotateCcw, Sparkles } from 'lucide-react';
 
 const SYSTEM_PROMPT = `
 You are a warm, humble, and friendly human team consultant at MakeASite, working directly alongside Arvind Singh (the founder).
@@ -141,22 +140,28 @@ export default function AiAssistant() {
 
   return (
     <>
-      {/* Floating Action Button (Styled like MakeASite Logo) */}
-      <div className="fixed bottom-6 right-6 z-50 flex flex-col items-end pointer-events-auto">
+      {/* Floating AI assistant */}
+      <div className="fixed bottom-6 right-6 z-50 flex items-center gap-3 pointer-events-auto">
+        {!isOpen && (
+          <div className="hidden rounded-2xl border border-red-100 bg-white px-3.5 py-2 text-right shadow-lg sm:block">
+            <p className="text-xs font-extrabold text-red-600">Ask MakeASite AI</p>
+            <p className="mt-0.5 text-[10px] text-slate-500">Let&apos;s build something great</p>
+          </div>
+        )}
         <button
           type="button"
           onClick={() => setIsOpen((prev) => !prev)}
-          className="relative flex h-14 w-14 items-center justify-center rounded-full border-2 border-red-500/40 bg-slate-950/95 shadow-2xl transition-all duration-300 hover:scale-105 active:scale-95 text-white backdrop-blur-md"
+          className="relative flex h-14 w-14 items-center justify-center rounded-full border-2 border-white bg-gradient-to-br from-red-500 to-red-700 text-white shadow-[0_12px_28px_rgba(220,38,38,0.38)] transition-all duration-300 hover:scale-105 active:scale-95"
           aria-label="Toggle MakeASite AI Assistant"
         >
           {isOpen ? (
             <X size={24} className="text-white" />
           ) : (
             <>
-              <Logo size={36} showText={false} />
+              <Sparkles size={25} strokeWidth={2.4} />
               <span className="absolute -top-0.5 -right-0.5 flex h-3.5 w-3.5">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
-                <span className="relative inline-flex rounded-full h-3.5 w-3.5 bg-red-500 border-2 border-slate-950"></span>
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-75"></span>
+                <span className="relative inline-flex h-3.5 w-3.5 rounded-full border-2 border-red-700 bg-white"></span>
               </span>
             </>
           )}
@@ -187,8 +192,8 @@ export default function AiAssistant() {
               }}
             >
               <div className="flex items-center gap-3">
-                <div className="h-9 w-9 rounded-2xl flex items-center justify-center border border-red-500/30 bg-slate-950 shadow-sm flex-shrink-0">
-                  <Logo size={24} showText={false} />
+                <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-2xl border border-red-200 bg-red-600 text-white shadow-sm">
+                  <Sparkles size={18} strokeWidth={2.4} />
                 </div>
                 <div>
                   <h3 className="font-extrabold text-sm leading-tight">MakeASite AI</h3>
@@ -229,8 +234,8 @@ export default function AiAssistant() {
                     className={`flex items-start gap-2.5 ${isAssistant ? 'justify-start' : 'justify-end'}`}
                   >
                     {isAssistant && (
-                      <div className="h-7 w-7 rounded-full flex items-center justify-center border border-red-500/30 bg-slate-950 flex-shrink-0 mt-0.5 shadow">
-                        <Logo size={18} showText={false} />
+                      <div className="mt-0.5 flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full border border-red-200 bg-red-600 text-white shadow">
+                        <Sparkles size={14} strokeWidth={2.4} />
                       </div>
                     )}
                     <div
@@ -253,8 +258,8 @@ export default function AiAssistant() {
 
               {loading && (
                 <div className="flex items-start gap-2.5 justify-start">
-                  <div className="h-7 w-7 rounded-full flex items-center justify-center border border-red-500/30 bg-slate-950 flex-shrink-0 mt-0.5 shadow">
-                    <Logo size={18} showText={false} />
+                  <div className="mt-0.5 flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full border border-red-200 bg-red-600 text-white shadow">
+                    <Sparkles size={14} strokeWidth={2.4} />
                   </div>
                   <div
                     className="rounded-2xl px-4 py-3 border flex items-center gap-1.5"
